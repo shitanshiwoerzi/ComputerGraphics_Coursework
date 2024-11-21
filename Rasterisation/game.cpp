@@ -7,7 +7,8 @@
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nCmdShow) {
 	Window canvas;
 	DxCore dx;
-	Shader shader;
+	//Shader shader;
+	ShaderManager shaders;
 	Triangle t;
 	GamesEngineeringBase::Timer tim;
 	float dt;
@@ -17,11 +18,9 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 	canvas.Init("MyWindow", 1024, 768);
 	dx.Init(1024, 768, canvas.hwnd);
 	std::string s = "Resources/vertex_shader.txt";
-	ID3DBlob* shaderBlob = nullptr;
-	shader.loadVS(s, dx.device);
-	shader.loadPS(s, dx.device, &shaderBlob);
-	shader.Init(dx.device, shaderBlob);
-	shaderBlob->Release();
+	std::string shaderName = "MyShader";
+	shaders.load(shaderName, s, s, dx.device);
+	Shader* shader = shaders.getShader(shaderName);
 	t.createBuffer(dx.device);
 	while (true) {
 		dx.clear();
@@ -37,13 +36,13 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 
 		canvas.processMessages();
 		// 更新常量缓冲区中的变量
-		shader.update("time", &constBufferCPU->time);
-		shader.update("lights", constBufferCPU->lights);
+		shader->update("time", &constBufferCPU->time);
+		shader->update("lights", constBufferCPU->lights);
 
 		// 将更新应用到 GPU
-		shader.UpdateConstantBuffer(dx.devicecontext);
+		shader->UpdateConstantBuffer(dx.devicecontext);
 		//shader.map(constBufferCPU, dx.devicecontext);
-		shader.apply(dx.devicecontext);
+		shader->apply(dx.devicecontext);
 		t.draw(dx.devicecontext);
 		dx.present();
 	}

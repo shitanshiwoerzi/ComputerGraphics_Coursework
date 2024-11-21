@@ -32,15 +32,6 @@ struct alignas(16) ConstantBuffer
 	mathLib::Vec4 lights[4];
 };
 
-class ShaderManager {
-public:
-	//std::map<std::string, Shader> shaders;
-
-	void load() {
-
-	}
-};
-
 class Shader {
 public:
 	ID3D11VertexShader* vertexShader;
@@ -173,4 +164,34 @@ private:
 		// 返回文件内容作为字符串
 		return buffer.str();
 	}
+};
+
+class ShaderManager {
+public:
+	std::map<std::string, Shader> shaders;
+
+	void load(std::string& name, std::string& vsFilename, std::string& psFilename, ID3D11Device* device) {
+		Shader shader;
+		ID3DBlob* shaderBlob = nullptr;
+		shader.loadVS(vsFilename, device);
+		shader.loadPS(psFilename, device, &shaderBlob);
+		shader.Init(device, shaderBlob);
+		shaderBlob->Release();
+		shaders[name] = shader;
+	}
+
+	Shader* getShader(std::string& name) {
+		auto it = shaders.find(name);
+		if (it != shaders.end()) {
+			return &it->second;
+		}
+		return nullptr;
+	}
+
+	void apply(std::string& name, ID3D11DeviceContext* deviceContext) {
+		Shader* shader = getShader(name);
+		if (shader)
+			shader->apply(deviceContext);
+	}
+
 };
