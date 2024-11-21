@@ -131,8 +131,8 @@
     <ClInclude Include="adapter.h" />
     <ClInclude Include="dxCore.h" />
     <ClInclude Include="GamesEngineeringBase.h" />
-    <ClInclude Include="mesh.h" />
     <ClInclude Include="mathLib.h" />
+    <ClInclude Include="mesh.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="window.h" />
   </ItemGroup>

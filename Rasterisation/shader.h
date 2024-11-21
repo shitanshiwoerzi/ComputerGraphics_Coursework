@@ -5,6 +5,16 @@
 #include <fstream>
 #include <sstream>
 #include <map>
+#include "mathLib.h"
+
+struct alignas(16) ConstantBuffer
+{
+	//std::string name;
+	//std::map<std::string, ConstantBufferVariable> constantBufferData;
+	float time;
+	float padding[3];
+	mathLib::Vec4 lights[4];
+};
 
 class ShaderManager {
 public:
@@ -20,6 +30,25 @@ public:
 	ID3D11VertexShader* vertexShader;
 	ID3D11PixelShader* pixelShader;
 	ID3D11InputLayout* layout;
+	ID3D11Buffer* constantBuffer;
+
+	void Init(ID3D11Device* device, int sizeInBytes = 16) {
+		D3D11_BUFFER_DESC bd;
+		bd.Usage = D3D11_USAGE_DYNAMIC;
+		bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		bd.MiscFlags = 0;
+		D3D11_SUBRESOURCE_DATA data;
+		bd.ByteWidth = sizeInBytes;
+		bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		device->CreateBuffer(&bd, NULL, &constantBuffer);
+	}
+
+	void map(ConstantBuffer* buffer, ID3D11DeviceContext* devicecontext) {
+		D3D11_MAPPED_SUBRESOURCE mapped;
+		devicecontext->Map(constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+		memcpy(mapped.pData, buffer, sizeof(ConstantBuffer));
+		devicecontext->Unmap(constantBuffer, 0);
+	}
 
 	void loadVS(std::string& filename, ID3D11Device* device) {
 		ID3DBlob* status;
@@ -62,6 +91,7 @@ public:
 		devicecontext->IASetInputLayout(layout);
 		devicecontext->VSSetShader(vertexShader, NULL, 0);
 		devicecontext->PSSetShader(pixelShader, NULL, 0);
+		devicecontext->PSSetConstantBuffers(0, 1, &constantBuffer);
 	}
 
 private:
