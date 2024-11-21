@@ -1,4 +1,4 @@
-#include "window.h"
+﻿#include "window.h"
 #include "dxCore.h"
 #include "shader.h"
 #include "mesh.h"
@@ -17,9 +17,11 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 	canvas.Init("MyWindow", 1024, 768);
 	dx.Init(1024, 768, canvas.hwnd);
 	std::string s = "Resources/vertex_shader.txt";
-	shader.Init(dx.device);
+	ID3DBlob* shaderBlob = nullptr;
 	shader.loadVS(s, dx.device);
-	shader.loadPS(s, dx.device);
+	shader.loadPS(s, dx.device, &shaderBlob);
+	shader.Init(dx.device, shaderBlob);
+	shaderBlob->Release();
 	t.createBuffer(dx.device);
 	while (true) {
 		dx.clear();
@@ -34,7 +36,13 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 		}
 
 		canvas.processMessages();
-		shader.map(constBufferCPU, dx.devicecontext);
+		// 更新常量缓冲区中的变量
+		shader.update("time", &constBufferCPU->time);
+		shader.update("lights", constBufferCPU->lights);
+
+		// 将更新应用到 GPU
+		shader.UpdateConstantBuffer(dx.devicecontext);
+		//shader.map(constBufferCPU, dx.devicecontext);
 		shader.apply(dx.devicecontext);
 		t.draw(dx.devicecontext);
 		dx.present();
