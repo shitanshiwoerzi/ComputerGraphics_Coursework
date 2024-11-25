@@ -1,6 +1,16 @@
 #pragma once
 #include "mathLib.h"
 #include <d3d11.h>
+#include <dxcore.h>
+
+struct STATIC_VERTEX
+{
+	mathLib::Vec3 pos;
+	mathLib::Vec3 normal;
+	mathLib::Vec3 tangent;
+	float tu;
+	float tv;
+};
 
 struct Vertex
 {
@@ -47,6 +57,48 @@ public:
 		devicecontext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		devicecontext->IASetVertexBuffers(0, 1, &vertexBuffer, &strides, &offsets);
 		devicecontext->Draw(3, 0);
+	}
+};
+
+class Plane {
+public:
+	ID3D11Buffer* indexBuffer;
+	ID3D11Buffer* vertexBuffer;
+	int indicesSize;
+	UINT strides;
+
+	// create a plane
+	void init(DxCore* core, void* vertices, int vertexSizeInBytes, int numVertices, unsigned int* indices, int numIndices) {
+		D3D11_BUFFER_DESC bd;
+		memset(&bd, 0, sizeof(D3D11_BUFFER_DESC));
+		bd.Usage = D3D11_USAGE_DEFAULT;
+		bd.ByteWidth = sizeof(unsigned int) * numIndices;
+		bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+		D3D11_SUBRESOURCE_DATA data;
+		memset(&data, 0, sizeof(D3D11_SUBRESOURCE_DATA));
+		data.pSysMem = indices;
+		core->device->CreateBuffer(&bd, &data, &indexBuffer);
+		bd.ByteWidth = vertexSizeInBytes * numVertices;
+		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		data.pSysMem = vertices;
+		core->device->CreateBuffer(&bd, &data, &vertexBuffer);
+		indicesSize = numIndices;
+		strides = vertexSizeInBytes;
+	}
+
+	void init(DxCore* core, std::vector<STATIC_VERTEX> vertices, std::vector<unsigned int> indices)
+	{
+		init(core, &vertices[0], sizeof(STATIC_VERTEX), vertices.size(), &indices[0], indices.size());
+	}
+
+	// ask the GPU to draw a plane
+	void draw(ID3D11DeviceContext* devicecontext) {
+		UINT offsets = 0;
+		devicecontext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		devicecontext->IASetVertexBuffers(0, 1, &vertexBuffer, &strides, &offsets);
+		devicecontext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+		devicecontext->DrawIndexed(indicesSize, 0, 0);
+
 	}
 };
 

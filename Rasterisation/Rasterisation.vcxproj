@@ -134,6 +134,7 @@
     <ClInclude Include="mathLib.h" />
     <ClInclude Include="mesh.h" />
     <ClInclude Include="shader.h" />
+    <ClInclude Include="shaderReflection.h" />
     <ClInclude Include="window.h" />
   </ItemGroup>
   <ItemGroup>
