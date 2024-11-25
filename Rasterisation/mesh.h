@@ -2,6 +2,7 @@
 #include "mathLib.h"
 #include <d3d11.h>
 #include <dxcore.h>
+#include <corecrt_math_defines.h>
 
 struct STATIC_VERTEX
 {
@@ -58,9 +59,17 @@ public:
 		devicecontext->IASetVertexBuffers(0, 1, &vertexBuffer, &strides, &offsets);
 		devicecontext->Draw(3, 0);
 	}
+
+	void updateConstantVS() {
+
+	}
+
+	void updateConstant() {
+
+	}
 };
 
-class Plane {
+class Mesh {
 public:
 	ID3D11Buffer* indexBuffer;
 	ID3D11Buffer* vertexBuffer;
@@ -102,4 +111,81 @@ public:
 	}
 };
 
+class plane {
+public:
+	Mesh mesh;
+
+	void init(DxCore* core) {
+		std::vector<STATIC_VERTEX> vertices;
+		vertices.push_back(addVertex(mathLib::Vec3(-15, 0, -15), mathLib::Vec3(0, 1, 0), 0, 0));
+		vertices.push_back(addVertex(mathLib::Vec3(15, 0, -15), mathLib::Vec3(0, 1, 0), 1, 0));
+		vertices.push_back(addVertex(mathLib::Vec3(-15, 0, 15), mathLib::Vec3(0, 1, 0), 0, 1));
+		vertices.push_back(addVertex(mathLib::Vec3(15, 0, 15), mathLib::Vec3(0, 1, 0), 1, 1));
+		std::vector<unsigned int> indices;
+		indices.push_back(2); indices.push_back(1); indices.push_back(0);
+		indices.push_back(1); indices.push_back(2); indices.push_back(3);
+		mesh.init(core, vertices, indices);
+
+	}
+
+	void draw(DxCore* core) {
+		mesh.draw(core->devicecontext);
+	}
+
+	STATIC_VERTEX addVertex(mathLib::Vec3 p, mathLib::Vec3 n, float tu, float tv)
+	{
+		STATIC_VERTEX v;
+		v.pos = p;
+		v.normal = n;
+		//Frame frame;
+		//frame.fromVector(n);
+		//v.tangent = frame.u; // For now
+		v.tangent = mathLib::Vec3(0, 0, 0);
+		v.tu = tu;
+		v.tv = tv;
+		return v;
+	}
+};
+
+class cube {
+
+};
+
+class sphere {
+public:
+	std::vector<STATIC_VERTEX> vertices;
+
+
+	void init(int rings, int segments, float radius) {
+		for (int lat = 0; lat <= rings; lat++) {
+			float theta = lat * M_PI / rings;
+			float sinTheta = sinf(theta);
+			float cosTheta = cosf(theta);
+			for (int lon = 0; lon <= segments; lon++) {
+				float phi = lon * 2.0f * M_PI / segments;
+				float sinPhi = sinf(phi);
+				float cosPhi = cosf(phi);
+				mathLib::Vec3 position(radius * sinTheta * cosPhi, radius * cosTheta, radius * sinTheta * sinPhi);
+				mathLib::Vec3 normal = position.normalize();
+				float tu = 1.0f - (float)lon / segments;
+				float tv = 1.0f - (float)lat / rings;
+				vertices.push_back(addVertex(position, normal, tu, tv));
+			}
+		}
+	}
+
+	STATIC_VERTEX addVertex(mathLib::Vec3 p, mathLib::Vec3 n, float tu, float tv)
+	{
+		STATIC_VERTEX v;
+		v.pos = p;
+		v.normal = n;
+		//Frame frame;
+		//frame.fromVector(n);
+		//v.tangent = frame.u; // For now
+		v.tangent = mathLib::Vec3(0, 0, 0);
+		v.tu = tu;
+		v.tv = tv;
+		return v;
+	}
+};
 

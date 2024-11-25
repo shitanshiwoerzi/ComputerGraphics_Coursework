@@ -4,46 +4,47 @@
 #include "mesh.h"
 #include "GamesEngineeringBase.h"
 
+struct alignas(16) timeAndLight {
+	float time;
+	float padding[3];
+	mathLib::Vec4 lights[4];
+};
+
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nCmdShow) {
 	Window canvas;
-	DxCore dx;
+	DxCore* dx = new DxCore();
 	//Shader shader;
 	ShaderManager shaders;
 	Triangle t;
 	GamesEngineeringBase::Timer tim;
 	float dt;
-	ConstantBuffer* constBufferCPU = new ConstantBuffer();
-	constBufferCPU->time = 0;
+	timeAndLight* entity = new timeAndLight();
+	entity->time = 0;
 	t.Init();
 	canvas.Init("MyWindow", 1024, 768);
-	dx.Init(1024, 768, canvas.hwnd);
+	dx->Init(1024, 768, canvas.hwnd);
 	std::string s = "Resources/vertex_shader.txt";
 	std::string shaderName = "MyShader";
-	shaders.load(shaderName, s, s, dx.device);
+	shaders.load(shaderName, s, s, dx);
 	Shader* shader = shaders.getShader(shaderName);
-	t.createBuffer(dx.device);
+	t.createBuffer(dx->device);
 	while (true) {
-		dx.clear();
+		dx->clear();
 		dt = tim.dt();
-		constBufferCPU->time += dt;
+		entity->time += dt;
 		for (int i = 0; i < 4; i++)
 		{
-			float angle = constBufferCPU->time + (i * M_PI / 2.0f);
-			constBufferCPU->lights[i] = mathLib::Vec4(canvas.width / 2.0f + (cosf(angle) * (canvas.width * 0.3f)),
+			float angle = entity->time + (i * M_PI / 2.0f);
+			entity->lights[i] = mathLib::Vec4(canvas.width / 2.0f + (cosf(angle) * (canvas.width * 0.3f)),
 				canvas.height / 2.0f + (sinf(angle) * (canvas.height * 0.3f)),
 				0, 0);
 		}
 
+		shader->updateConstantPS("bufferName", "time", &entity->time);
+		shader->updateConstantPS("bufferName", "lights", &entity->lights);
 		canvas.processMessages();
-		// 更新常量缓冲区中的变量
-		shader->update("time", &constBufferCPU->time);
-		shader->update("lights", constBufferCPU->lights);
-
-		// 将更新应用到 GPU
-		shader->UpdateConstantBuffer(dx.devicecontext);
-		//shader.map(constBufferCPU, dx.devicecontext);
-		shader->apply(dx.devicecontext);
-		t.draw(dx.devicecontext);
-		dx.present();
+		shader->apply(dx);
+		t.draw(dx->devicecontext);
+		dx->present();
 	}
 }

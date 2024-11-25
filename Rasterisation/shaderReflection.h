@@ -9,9 +9,15 @@
 #include <sstream>
 #include <vector>
 
-#include "dxCore.h" // Replace with your DXCore etc
+#include "DxCore.h" // Replace with your DXCore etc
 
 #pragma comment(lib, "dxguid.lib")
+
+enum ShaderStage
+{
+	VertexShader,
+	PixelShader
+};
 
 struct ConstantBufferVariable
 {
@@ -29,21 +35,23 @@ public:
 	unsigned int cbSizeInBytes;
 	int dirty;
 	int index;
-
-	void init(DxCore* core, unsigned int sizeInBytes, int constantBufferIndex)
+	ShaderStage shaderStage;
+	void init(DxCore* core, unsigned int sizeInBytes, int constantBufferIndex, ShaderStage _shaderStage)
 	{
+		unsigned int sizeInBytes16 = ((sizeInBytes + 15) & -16);
 		D3D11_BUFFER_DESC bd;
 		bd.Usage = D3D11_USAGE_DYNAMIC;
 		bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		bd.MiscFlags = 0;
 		D3D11_SUBRESOURCE_DATA data;
-		bd.ByteWidth = sizeInBytes;
+		bd.ByteWidth = sizeInBytes16;
 		bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		core->device->CreateBuffer(&bd, NULL, &cb);
-		buffer = new unsigned char[sizeInBytes];
+		buffer = new unsigned char[sizeInBytes16];
 		cbSizeInBytes = sizeInBytes;
 		index = constantBufferIndex;
 		dirty = 1;
+		shaderStage = _shaderStage;
 	}
 	void update(std::string name, void* data)
 	{
@@ -59,7 +67,14 @@ public:
 			core->devicecontext->Map(cb, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
 			memcpy(mapped.pData, buffer, cbSizeInBytes);
 			core->devicecontext->Unmap(cb, 0);
-			core->devicecontext->VSSetConstantBuffers(index, 1, &cb);
+			if (shaderStage == ShaderStage::VertexShader)
+			{
+				core->devicecontext->VSSetConstantBuffers(index, 1, &cb);
+			}
+			if (shaderStage == ShaderStage::PixelShader)
+			{
+				core->devicecontext->PSSetConstantBuffers(index, 1, &cb);
+			}
 			dirty = 0;
 		}
 	}
@@ -72,7 +87,7 @@ public:
 class ConstantBufferReflection
 {
 public:
-	void build(DxCore* core, ID3DBlob* shader, std::vector<ConstantBuffer>& buffers, std::map<std::string, int>& textureBindPoints)
+	void build(DxCore* core, ID3DBlob* shader, std::vector<ConstantBuffer>& buffers, std::map<std::string, int>& textureBindPoints, ShaderStage shaderStage)
 	{
 		ID3D11ShaderReflection* reflection;
 		D3DReflect(shader->GetBufferPointer(), shader->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&reflection);
@@ -97,7 +112,7 @@ public:
 				buffer.constantBufferData.insert({ vDesc.Name, bufferVariable });
 				totalSize += bufferVariable.size;
 			}
-			buffer.init(core, totalSize, i);
+			buffer.init(core, totalSize, i, shaderStage);
 			buffers.push_back(buffer);
 		}
 		for (int i = 0; i < desc.BoundResources; i++)
@@ -111,31 +126,3 @@ public:
 		}
 	}
 };
-
-// How to use
-/*
-Define in shader class:
-
-std::vector<ConstantBuffer> psConstantBuffers;
-std::vector<ConstantBuffer> vsConstantBuffers;
-std::map<std::string, int> textureBindPointsVS;
-std::map<std::string, int> textureBindPointsPS;
-
-
-	void loadPS(Core *core, std::string hlsl)
-	{
-		ID3DBlob* shader;
-		ID3DBlob* status;
-		HRESULT hr = D3DCompile(hlsl.c_str(), strlen(hlsl.c_str()), NULL, NULL, NULL, "PS", "ps_5_0", 0, 0, &shader, &status);
-		if (FAILED(hr))
-		{
-			printf("%s\n", (char*)status->GetBufferPointer());
-			exit(0);
-		}
-		core->device->CreatePixelShader(shader->GetBufferPointer(), shader->GetBufferSize(), NULL, &ps);
-		ConstantBufferReflection reflection;
-		reflection.build(core, shader, psConstantBuffers, textureBindPointsPS);
-	}
-
-	And repeat for loadVS
-*/
