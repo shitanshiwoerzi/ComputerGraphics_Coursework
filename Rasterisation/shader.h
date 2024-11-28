@@ -24,8 +24,6 @@ public:
 	std::map<std::string, int> textureBindPointsVS;
 	std::map<std::string, int> textureBindPointsPS;
 
-	//unsigned char* CPUbuffer;
-
 	void Init(ID3D11Device* device, int sizeInBytes = 16) {
 		D3D11_BUFFER_DESC bd;
 		bd.Usage = D3D11_USAGE_DYNAMIC;
@@ -59,13 +57,17 @@ public:
 		//	{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		//};
 
-		D3D11_INPUT_ELEMENT_DESC layoutDesc[] =
-		{
+		D3D11_INPUT_ELEMENT_DESC layoutDesc[] = {
 			{ "POS", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-			{ "COLOUR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "BONEIDS", 0, DXGI_FORMAT_R32G32B32A32_UINT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+			{ "BONEWEIGHTS", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		};
 
-		core->device->CreateInputLayout(layoutDesc, 2, shader->GetBufferPointer(), shader->GetBufferSize(), &layout);
+
+		core->device->CreateInputLayout(layoutDesc, 6, shader->GetBufferPointer(), shader->GetBufferSize(), &layout);
 		shader->Release();
 	}
 
@@ -86,6 +88,26 @@ public:
 		shader->Release();
 	}
 
+	//void updateConstantVS(std::string name, std::string constBuffferName, std::string variableName, void* data) {
+	//	for (int i = 0; i < vsConstantBuffers.size(); i++)
+	//	{
+	//		if (vsConstantBuffers[i].name == name)
+	//		{
+	//			vsConstantBuffers[i].update(variableName, data);
+	//		}
+	//	}
+	//}
+
+	//void updateConstantPS(std::string name, std::string constBuffferName, std::string variableName, void* data) {
+	//	for (int i = 0; i < psConstantBuffers.size(); i++)
+	//	{
+	//		if (psConstantBuffers[i].name == name)
+	//		{
+	//			psConstantBuffers[i].update(variableName, data);
+	//		}
+	//	}
+	//}
+
 	void updateConstantVS(std::string constantBufferName, std::string variableName, void* data)
 	{
 		updateConstant(constantBufferName, variableName, data, vsConstantBuffers);
@@ -94,7 +116,7 @@ public:
 	{
 		updateConstant(constantBufferName, variableName, data, psConstantBuffers);
 	}
-	
+
 	void updateConstant(std::string constantBufferName, std::string variableName, void* data, std::vector<ConstantBuffer>& buffers)
 	{
 		for (int i = 0; i < buffers.size(); i++)

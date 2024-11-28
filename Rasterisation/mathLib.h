@@ -368,6 +368,25 @@ namespace mathLib {
 			return mat;
 		}
 
+		// 透视投影变换
+		static Matrix perspectiveProjection(float aspect, float theta, float farr, float nearr) {
+			Matrix mat;
+			float tanHalfFovy = tanf(theta / 2);
+			mat.a[0][0] = 1 / (aspect * tanHalfFovy);
+			mat.a[1][1] = 1 / tanHalfFovy;
+
+			// right hand
+			mat.a[2][2] = -(farr + nearr) / (farr - nearr);
+			mat.a[2][3] = -(2 * farr * nearr) / (farr - nearr);
+			mat.a[3][2] = -1;
+
+			//// left hand
+			//mat.a[2][2] = farr / (farr - nearr);
+			//mat.a[2][3] = 1;
+			//mat.a[3][2] = -(nearr * farr) / (farr - nearr);
+			return mat;
+		}
+
 		// 混合矩阵
 		Matrix mul(const Matrix& matrix) const
 		{
