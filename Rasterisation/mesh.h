@@ -400,7 +400,13 @@ public:
 	}
 
 
-	void draw(float dt) {
-		instance.update("Run", dt);
+	void draw(DxCore* core) {
+		mathLib::Matrix w;
+
+		for (int i = 0; i < meshes.size(); i++)
+		{
+			meshes[i].draw(core->devicecontext);
+		}
+
 	}
 };
