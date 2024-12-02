@@ -66,7 +66,6 @@ public:
 			{ "BONEWEIGHTS", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		};
 
-
 		core->device->CreateInputLayout(layoutDesc, 6, shader->GetBufferPointer(), shader->GetBufferSize(), &layout);
 		shader->Release();
 	}
@@ -129,10 +128,18 @@ public:
 		}
 	}
 
+	void updateTexturePS(DxCore* core, std::string name, ID3D11ShaderResourceView* srv, ID3D11SamplerState* state) {
+		//core->devicecontext->VSSetShaderResources(textureBindPointsVS[name], 1, &srv);
+		core->devicecontext->PSSetShaderResources(textureBindPointsPS[name], 1, &srv);
+		core->devicecontext->PSSetSamplers(textureBindPointsPS[name], 1, &state);
+	}
+
 	void apply(DxCore* core) {
 		core->devicecontext->IASetInputLayout(layout);
 		core->devicecontext->VSSetShader(vertexShader, NULL, 0);
 		core->devicecontext->PSSetShader(pixelShader, NULL, 0);
+
+
 		for (int i = 0; i < vsConstantBuffers.size(); i++) {
 			vsConstantBuffers[i].upload(core);
 		}

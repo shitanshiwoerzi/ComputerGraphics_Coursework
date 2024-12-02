@@ -576,49 +576,51 @@ namespace mathLib {
 
 	class Quaternion {
 	public:
-		float w, x, y, z;
+		float a, b, c, d;
 
 		// Constructor
-		Quaternion(float _w = 1, float _x = 0, float _y = 0, float _z = 0)
-			: w(_w), x(_x), y(_y), z(_z) {}
+		Quaternion(float _a = 1, float _b = 0, float _c = 0, float _d = 0)
+			: a(_a), b(_b), c(_c), d(_d) {}
 
 		// Normalize the quaternion
 		void normalize() {
-			float norm = std::sqrtf(SQ(w) + SQ(x) + SQ(y) + SQ(z));
-			w /= norm;
-			x /= norm;
-			y /= norm;
-			z /= norm;
+			float norm = std::sqrt(SQ(a) + SQ(b) + SQ(c) + SQ(d));
+			if (norm > 0) {
+				a /= norm;
+				b /= norm;
+				c /= norm;
+				d /= norm;
+			}
 		}
 
 		// Quaternion multiplication
 		Quaternion operator*(const Quaternion& q) const {
 			return Quaternion(
-				w * q.w - x * q.x - y * q.y - z * q.z,
-				w * q.x + x * q.w + y * q.z - z * q.y,
-				w * q.y - x * q.z + y * q.w + z * q.x,
-				w * q.z + x * q.y - y * q.x + z * q.w
+				a * q.a - b * q.b - c * q.c - d * q.d,
+				a * q.b + b * q.a + c * q.d - d * q.c,
+				a * q.c - b * q.d + c * q.a + d * q.b,
+				a * q.d + b * q.c - c * q.b + d * q.a
 			);
 		}
 
 		// Quaternion addition
 		Quaternion operator+(const Quaternion& q) const {
-			return Quaternion(w + q.w, x + q.x, y + q.y, z + q.z);
+			return Quaternion(a + q.a, b + q.b, c + q.c, d + q.d);
 		}
 
 		// Quaternion subtraction
 		Quaternion operator-(const Quaternion& q) const {
-			return Quaternion(w - q.w, x - q.x, y - q.y, z - q.z);
+			return Quaternion(a - q.a, b - q.b, c - q.c, d - q.d);
 		}
 
 		// Scalar multiplication
 		Quaternion operator*(float scalar) const {
-			return Quaternion(w * scalar, x * scalar, y * scalar, z * scalar);
+			return Quaternion(a * scalar, b * scalar, c * scalar, d * scalar);
 		}
 
 		// Dot product
 		float dot(const Quaternion& q) const {
-			return w * q.w + x * q.x + y * q.y + z * q.z;
+			return a * q.a + b * q.b + c * q.c + d * q.d;
 		}
 
 		// Slerp (Spherical Linear Interpolation)
@@ -627,40 +629,49 @@ namespace mathLib {
 			const float threshold = 0.9995f;
 
 			if (dot > threshold) {
-				// If the quaternions are nearly identical, use linear interpolation
+				// If the quaternions are nearlc identical, use linear interpolation
 				Quaternion result = q1 + (q2 - q1) * t;
 				result.normalize();
 				return result;
 			}
 
 			dot = clamp(dot, -1.0f, 1.0f);
-			float theta_0 = std::acosf(dot);
+			float theta_0 = std::acos(dot);
 			float theta = theta_0 * t;
 
 			Quaternion q3 = q2 - q1 * dot;
 			q3.normalize();
 
-			return q1 * std::cosf(theta) + q3 * std::sinf(theta);
+			return q1 * std::cos(theta) + q3 * std::sin(theta);
 		}
 
 		// Convert to rotation matrix
 		Matrix toMatrix() const {
 			Matrix mat;
-			mat.a[0][0] = 1 - 2 * (SQ(y) + SQ(z));
-			mat.a[0][1] = 2 * (x * y - z * w);
-			mat.a[0][2] = 2 * (x * z + y * w);
-			mat.a[1][0] = 2 * (x * y + z * w);
-			mat.a[1][1] = 1 - 2 * (SQ(x) + SQ(z));
-			mat.a[1][2] = 2 * (y * z - x * w);
-			mat.a[2][0] = 2 * (x * z - y * w);
-			mat.a[2][1] = 2 * (y * z + x * w);
-			mat.a[2][2] = 1 - 2 * (SQ(x) + SQ(y));
+			//mat.a[0][0] = 1 - 2 * (SQ(c) + SQ(d));
+			//mat.a[0][1] = 2 * (b * c - d * a);
+			//mat.a[0][2] = 2 * (b * d + c * a);
+			//mat.a[1][0] = 2 * (b * c + d * a);
+			//mat.a[1][1] = 1 - 2 * (SQ(b) + SQ(d));
+			//mat.a[1][2] = 2 * (c * d - b * a);
+			//mat.a[2][0] = 2 * (b * d - c * a);
+			//mat.a[2][1] = 2 * (c * d + b * a);
+			//mat.a[2][2] = 1 - 2 * (SQ(b) + SQ(c));
+			mat.a[0][0] = 1 - 2 * (SQ(c) + SQ(d));
+			mat.a[0][1] = 2 * (b * c - a * d);
+			mat.a[0][2] = 2 * (b * d + a * c);
+			mat.a[1][0] = 2 * (b * c + a * d);
+			mat.a[1][1] = 1 - 2 * (SQ(b) + SQ(d));
+			mat.a[1][2] = 2 * (c * d - a * b);
+			mat.a[2][0] = 2 * (b * d - a * c);
+			mat.a[2][1] = 2 * (c * d + a * b);
+			mat.a[2][2] = 1 - 2 * (SQ(b) + SQ(c));
 			return mat;
 		}
 
 		// Print quaternion
 		friend std::ostream& operator<<(std::ostream& os, const Quaternion& q) {
-			os << "Quaternion(" << q.w << ", " << q.x << ", " << q.y << ", " << q.z << ")";
+			os << "Quaternion(" << q.a << ", " << q.b << ", " << q.c << ", " << q.d << ")";
 			return os;
 		}
 	};

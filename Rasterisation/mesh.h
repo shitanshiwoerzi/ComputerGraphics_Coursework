@@ -1,10 +1,12 @@
 #pragma once
 #include "mathLib.h"
 #include <d3d11.h>
-#include <dxcore.h>
 #include <corecrt_math_defines.h>
 #include "GEMLoader.h"
 #include "animation.h"
+#include "dxCore.h"
+#include "shader.h"
+#include "texture.h"
 
 struct STATIC_VERTEX
 {
@@ -158,10 +160,10 @@ public:
 		//mesh.init(core, vertices, indices);
 
 		std::vector<STATIC_VERTEX> vertices;
-		vertices.push_back(addVertex(mathLib::Vec3(-0.5f, 0, -0.5f), mathLib::Vec3(0, 1, 0), 0, 0));
-		vertices.push_back(addVertex(mathLib::Vec3(0.5f, 0, -0.5f), mathLib::Vec3(0, 1, 0), 1, 0));
-		vertices.push_back(addVertex(mathLib::Vec3(-0.5f, 0, 0.5f), mathLib::Vec3(0, 1, 0), 0, 1));
-		vertices.push_back(addVertex(mathLib::Vec3(0.5f, 0, 0.5f), mathLib::Vec3(0, 1, 0), 1, 1));
+		vertices.push_back(addVertex(mathLib::Vec3(-5.0f, 0, -5.0f), mathLib::Vec3(0, 1, 0), 0, 0));
+		vertices.push_back(addVertex(mathLib::Vec3(5.0f, 0, -5.0f), mathLib::Vec3(0, 1, 0), 1, 0));
+		vertices.push_back(addVertex(mathLib::Vec3(-5.0f, 0, 5.0f), mathLib::Vec3(0, 1, 0), 0, 1));
+		vertices.push_back(addVertex(mathLib::Vec3(5.0f, 0, 5.0f), mathLib::Vec3(0, 1, 0), 1, 1));
 		std::vector<unsigned int> indices;
 		indices.push_back(2); indices.push_back(1); indices.push_back(0);
 		indices.push_back(1); indices.push_back(2); indices.push_back(3);
@@ -333,7 +335,6 @@ public:
 		{
 			meshes[i].draw(core->devicecontext);
 		}
-
 	}
 };
 
@@ -342,6 +343,8 @@ public:
 	std::vector<Mesh> meshes;
 	Animation animation;
 	AnimationInstance instance;
+	std::vector<std::string> textureFilenames;
+
 
 	void init(std::string filename, DxCore* core) {
 		GEMLoader::GEMModelLoader loader;
@@ -356,6 +359,9 @@ public:
 				memcpy(&v, &gemmeshes[i].verticesAnimated[j], sizeof(ANIMATED_VERTEX));
 				vertices.push_back(v);
 			}
+
+			// Load texture with filename: gemmeshes[i].material.find("diffuse").getValue()
+			textureFilenames.push_back(gemmeshes[i].material.find("diffuse").getValue());
 			mesh.init(core, vertices, gemmeshes[i].indices);
 			meshes.push_back(mesh);
 		}
@@ -400,11 +406,10 @@ public:
 	}
 
 
-	void draw(DxCore* core) {
-		mathLib::Matrix w;
-
+	void draw(DxCore* core, Shader* shader, textureManager textures, sampler sam) {
 		for (int i = 0; i < meshes.size(); i++)
 		{
+			shader->updateTexturePS(core, "tex", textures.find(textureFilenames[i]), sam.state);
 			meshes[i].draw(core->devicecontext);
 		}
 

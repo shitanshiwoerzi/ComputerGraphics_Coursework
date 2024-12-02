@@ -3,6 +3,8 @@
 #include "shader.h"
 #include "mesh.h"
 #include "GamesEngineeringBase.h"
+#include "camera.h"
+#include "texture.h"
 
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nCmdShow) {
 	Window canvas;
@@ -10,9 +12,12 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 	canvas.Init("MyWindow", 1024, 768);
 	DxCore* dx = new DxCore();
 	dx->Init(1024, 768, canvas.hwnd);
-	std::string vs = "Resources/animationVertexShader.hlsl";
+	std::string avs = "Resources/animationvertexShader.hlsl";
+	std::string vs = "Resources/vertexShader.hlsl";
 	std::string ps = "Resources/pixelShader.hlsl";
+	std::string tps = "Resources/texturePixelShader.hlsl";
 	std::string shaderName = "MyShader";
+	std::string planeShaderName = "planeShader";
 	plane pl;
 	pl.init(dx);
 
@@ -27,8 +32,10 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 
 	animatedModel am;
 	am.init("Resources/TRex.gem", dx);
-	shaders.load(shaderName, vs, ps, dx);
+	shaders.load(shaderName, avs, tps, dx);
+	shaders.load(planeShaderName, vs, ps, dx);
 	Shader* shader = shaders.getShader(shaderName);
+	Shader* planeShader = shaders.getShader(planeShaderName);
 	GamesEngineeringBase::Timer tim;
 	float t = 0;
 	mathLib::Matrix planeWorld;
@@ -37,6 +44,12 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 	mathLib::Vec3 up(0, 1, 0);
 	mathLib::Matrix m;
 	auto p = m.perspectiveProjection(1.f, 45.0f * M_PI / 180.0f, 100.f, 0.1f);
+	camera camera(0.0f, 5.0f, -10.0f, 0.0f, 0.0f);
+
+	textureManager textures;
+	textures.load(dx, "Resources/Textures/T-rex_Base_Color.png");
+	sampler sam;
+	sam.init(dx);
 
 	while (true) {
 		dx->clear();
@@ -45,22 +58,28 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 		//mathLib::Vec3 from = mathLib::Vec3(0.0f, 5.0f, -10.0f);
 		mathLib::Matrix v = lookAt(from, to, up);
 
+		mathLib::Matrix cv = camera.getViewMatrix();
+		//camera.processKeyboard(canvas.keys, tim.dt()*2000);
+		//camera.processMouseMovement(canvas.mousex, canvas.mousey);
+
 		vp = v * p;
 		mathLib::Matrix treeWorld = planeWorld.scaling(mathLib::Vec3(0.001f, 0.001f, 0.001f));
-		//shader->updateConstantVS("staticMeshBuffer", "W", &treeWorld);
-		//shader->updateConstantVS("staticMeshBuffer", "VP", &vp);
+		planeShader->updateConstantVS("staticMeshBuffer", "W", &planeWorld);
+		planeShader->updateConstantVS("staticMeshBuffer", "VP", &vp);
 
-		am.instance.update("Run", tim.dt() * 200);
+		am.instance.update("Run", tim.dt() * 20);
 		shader->updateConstantVS("animatedMeshBuffer", "W", &planeWorld);
 		shader->updateConstantVS("animatedMeshBuffer", "VP", &vp);
 		shader->updateConstantVS("animatedMeshBuffer", "bones", &(am.instance.matrices));
 		shader->apply(dx);
-		//pl.draw(dx);
+		pl.draw(dx);
 		//sphere.draw(dx);
 		//cub.draw(dx);
 		//tree.draw(dx);
-		am.draw(dx);
+		am.draw(dx, shader, textures, sam);
 		canvas.processMessages();
 		dx->present();
 	}
+
+	textures.unload("Resources/Textures/T-rex_Base_Color.png");
 }

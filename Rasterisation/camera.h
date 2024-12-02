@@ -16,7 +16,7 @@ public:
 		from = from.normalize();
 		mathLib::Vec3 to = pos + from;
 		mathLib::Vec3 up(0.0f, 1.0f, 0.0f);
-		return mathLib::lookAt(from, to, up);
+		return mathLib::lookAt(to, from, up);
 	}
 
     void processKeyboard(bool* keys, float deltaTime) {
