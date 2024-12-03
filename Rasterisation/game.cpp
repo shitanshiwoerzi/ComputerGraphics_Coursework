@@ -59,10 +59,10 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 		mathLib::Matrix v = lookAt(from, to, up);
 
 		mathLib::Matrix cv = camera.getViewMatrix();
-		//camera.processKeyboard(canvas.keys, tim.dt()*2000);
+		camera.processKeyboard(canvas.keys, tim.dt()*2000);
 		//camera.processMouseMovement(canvas.mousex, canvas.mousey);
 
-		vp = v * p;
+		vp = cv * p;
 		mathLib::Matrix treeWorld = planeWorld.scaling(mathLib::Vec3(0.001f, 0.001f, 0.001f));
 		planeShader->updateConstantVS("staticMeshBuffer", "W", &planeWorld);
 		planeShader->updateConstantVS("staticMeshBuffer", "VP", &vp);
@@ -71,11 +71,12 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 		shader->updateConstantVS("animatedMeshBuffer", "W", &planeWorld);
 		shader->updateConstantVS("animatedMeshBuffer", "VP", &vp);
 		shader->updateConstantVS("animatedMeshBuffer", "bones", &(am.instance.matrices));
-		shader->apply(dx);
+		planeShader->apply(dx);
 		pl.draw(dx);
 		//sphere.draw(dx);
 		//cub.draw(dx);
 		//tree.draw(dx);
+		shader->apply(dx);
 		am.draw(dx, shader, textures, sam);
 		canvas.processMessages();
 		dx->present();

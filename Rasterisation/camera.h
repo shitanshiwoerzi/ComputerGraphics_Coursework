@@ -29,13 +29,13 @@ public:
 
         mathLib::Vec3 right = mathLib::Vec3(0.0f, 1.0f, 0.0f).cross(front).normalize();
 
-        if (keys['W'])
-            pos = pos + front * velocity;
-        if (keys['S'])
-            pos = pos - front * velocity;
         if (keys['A'])
-            pos = pos - right * velocity;
+            pos = pos + front * velocity;
         if (keys['D'])
+            pos = pos - front * velocity;
+        if (keys['S'])
+            pos = pos - right * velocity;
+        if (keys['W'])
             pos = pos + right * velocity;
     }
 

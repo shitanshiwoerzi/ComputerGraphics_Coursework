@@ -648,24 +648,22 @@ namespace mathLib {
 		// Convert to rotation matrix
 		Matrix toMatrix() const {
 			Matrix mat;
-			//mat.a[0][0] = 1 - 2 * (SQ(c) + SQ(d));
-			//mat.a[0][1] = 2 * (b * c - d * a);
-			//mat.a[0][2] = 2 * (b * d + c * a);
-			//mat.a[1][0] = 2 * (b * c + d * a);
-			//mat.a[1][1] = 1 - 2 * (SQ(b) + SQ(d));
-			//mat.a[1][2] = 2 * (c * d - b * a);
-			//mat.a[2][0] = 2 * (b * d - c * a);
-			//mat.a[2][1] = 2 * (c * d + b * a);
-			//mat.a[2][2] = 1 - 2 * (SQ(b) + SQ(c));
-			mat.a[0][0] = 1 - 2 * (SQ(c) + SQ(d));
-			mat.a[0][1] = 2 * (b * c - a * d);
-			mat.a[0][2] = 2 * (b * d + a * c);
-			mat.a[1][0] = 2 * (b * c + a * d);
-			mat.a[1][1] = 1 - 2 * (SQ(b) + SQ(d));
-			mat.a[1][2] = 2 * (c * d - a * b);
-			mat.a[2][0] = 2 * (b * d - a * c);
-			mat.a[2][1] = 2 * (c * d + a * b);
-			mat.a[2][2] = 1 - 2 * (SQ(b) + SQ(c));
+			mat[0] = 1.0f - 2.0f * (SQ(b) + SQ(c));
+			mat[1] = 2.0f * (a * b - d * c);
+			mat[2] = 2.0f * (a * c + d * b);
+			mat[3] = 0.0;
+			mat[4] = 2.0f * (a * b + d * c);
+			mat[5] = 1.0f - 2.0f * (SQ(a) + SQ(c));
+			mat[6] = 2.0f * (b * c - d * a);
+			mat[7] = 0.0;
+			mat[8] = 2.0f * (a * c - d * b);
+			mat[9] = 2.0f * (b * c + d * a);
+			mat[10] = 1.0f - 2.0f * (SQ(a) + SQ(b));
+			mat[11] = 0.0;
+			mat[12] = 0;
+			mat[13] = 0;
+			mat[14] = 0;
+			mat[15] = 1;
 			return mat;
 		}
 
