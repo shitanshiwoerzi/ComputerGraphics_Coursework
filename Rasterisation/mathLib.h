@@ -113,6 +113,7 @@ namespace mathLib {
 		Vec3 operator*(const Vec3 v) { return Vec3(x * v.x, y * v.y, z * v.z); }
 		Vec3 operator/(const Vec3 v) { return Vec3(x / v.x, y / v.y, z / v.z); }
 		Vec3& operator+=(const Vec3& v) { x += v.x; y += v.y; z += v.z; return *this; }
+		Vec3& operator-=(const Vec3& v) { x -= v.x; y -= v.y; z -= v.z; return *this; }
 		Vec3& operator*=(const Vec3& v) { x *= v.x; y *= v.y; z *= v.z; return *this; }
 		Vec3& operator/=(const Vec3& v) { x /= v.x; y /= v.y; z /= v.z; return *this; }
 		Vec3 operator*(const float val) { return Vec3(x * val, y * val, z * val); }
@@ -666,6 +667,14 @@ namespace mathLib {
 			mat[15] = 1;
 			return mat;
 		}
+
+		// 从轴角转换为四元数
+		static Quaternion fromAxisAngle(const mathLib::Vec3& axis, float angle) {
+			float halfAngle = angle / 2.0f;
+			float s = std::sin(halfAngle);
+			return Quaternion(std::cos(halfAngle), axis.x * s, axis.y * s, axis.z * s);
+		}
+
 
 		// Print quaternion
 		friend std::ostream& operator<<(std::ostream& os, const Quaternion& q) {

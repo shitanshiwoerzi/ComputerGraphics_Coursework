@@ -12,10 +12,10 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 	canvas.Init("MyWindow", 1024, 768);
 	DxCore* dx = new DxCore();
 	dx->Init(1024, 768, canvas.hwnd);
-	std::string avs = "Resources/animationvertexShader.hlsl";
-	std::string vs = "Resources/vertexShader.hlsl";
-	std::string ps = "Resources/pixelShader.hlsl";
-	std::string tps = "Resources/texturePixelShader.hlsl";
+	std::string avs = "Resources/Shader/animationvertexShader.hlsl";
+	std::string vs = "Resources/Shader/vertexShader.hlsl";
+	std::string ps = "Resources/Shader/pixelShader.hlsl";
+	std::string tps = "Resources/Shader/texturePixelShader.hlsl";
 	std::string shaderName = "MyShader";
 	std::string planeShaderName = "planeShader";
 	plane pl;
@@ -27,11 +27,14 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 	sphere sphere;
 	sphere.init(dx, 100, 100, 0.5f);
 
-	model tree;
-	tree.init("Resources/acacia_003.gem", dx);
+	//animatedModel gun;
+	//gun.init("Resources/GemModel/Automatic_Carbine_5.gem", dx);
+
+	animatedModel soldier;
+	soldier.init("Resources/GemModel/Soldier1.gem", dx);
 
 	animatedModel am;
-	am.init("Resources/TRex.gem", dx);
+	am.init("Resources/GemModel/TRex.gem", dx);
 	shaders.load(shaderName, avs, tps, dx);
 	shaders.load(planeShaderName, vs, ps, dx);
 	Shader* shader = shaders.getShader(shaderName);
@@ -48,6 +51,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 
 	textureManager textures;
 	textures.load(dx, "Resources/Textures/T-rex_Base_Color.png");
+	textures.load(dx, "Resources/Textures/MaleDuty_3_OBJ_Serious_Packed0_Diffuse.png");
+	textures.load(dx, "Resources/Textures/arms_1_Albedo.png");
 	sampler sam;
 	sam.init(dx);
 
@@ -59,28 +64,39 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 		mathLib::Matrix v = lookAt(from, to, up);
 
 		mathLib::Matrix cv = camera.getViewMatrix();
-		camera.processKeyboard(canvas.keys, tim.dt()*2000);
-		//camera.processMouseMovement(canvas.mousex, canvas.mousey);
+		camera.processKeyboard(canvas.keys, tim.dt() * 2000);
+		camera.processMouseMovement(canvas.getXOffset(), canvas.getYOffset());
 
 		vp = cv * p;
-		mathLib::Matrix treeWorld = planeWorld.scaling(mathLib::Vec3(0.001f, 0.001f, 0.001f));
+		mathLib::Matrix soldierWorld = planeWorld.scaling(mathLib::Vec3(0.01f, 0.01f, 0.01f)) * planeWorld.translation(mathLib::Vec3(3.f, 0, 0));
+		mathLib::Matrix dinosaurWorld = planeWorld.rotateY(180);
 		planeShader->updateConstantVS("staticMeshBuffer", "W", &planeWorld);
 		planeShader->updateConstantVS("staticMeshBuffer", "VP", &vp);
-
-		am.instance.update("Run", tim.dt() * 20);
-		shader->updateConstantVS("animatedMeshBuffer", "W", &planeWorld);
-		shader->updateConstantVS("animatedMeshBuffer", "VP", &vp);
-		shader->updateConstantVS("animatedMeshBuffer", "bones", &(am.instance.matrices));
 		planeShader->apply(dx);
 		pl.draw(dx);
 		//sphere.draw(dx);
-		//cub.draw(dx);
-		//tree.draw(dx);
+		// //cub.draw(dx);
+
+		//gun.instance.update("fire", tim.dt() * 20);
+
+
+		am.instance.update("Run", tim.dt() * 20);
+		shader->updateConstantVS("animatedMeshBuffer", "W", &dinosaurWorld);
+		shader->updateConstantVS("animatedMeshBuffer", "VP", &vp);
+		shader->updateConstantVS("animatedMeshBuffer", "bones", &(am.instance.matrices));
 		shader->apply(dx);
 		am.draw(dx, shader, textures, sam);
+
+		soldier.instance.update("walking", tim.dt() * 20);
+		shader->updateConstantVS("animatedMeshBuffer", "W", &soldierWorld);
+		shader->updateConstantVS("animatedMeshBuffer", "bones", &(soldier.instance.matrices));
+		shader->apply(dx);
+		soldier.draw(dx, shader, textures, sam);
+		//gun.draw(dx, shader, textures, sam);
 		canvas.processMessages();
 		dx->present();
 	}
 
 	textures.unload("Resources/Textures/T-rex_Base_Color.png");
+	textures.unload("Resources/Textures/MaleDuty_3_OBJ_Happy_Packed0_Diffuse.png");
 }

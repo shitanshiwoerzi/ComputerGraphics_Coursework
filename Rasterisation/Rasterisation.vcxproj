@@ -147,9 +147,6 @@
     <ClCompile Include="game.cpp" />
     <ClCompile Include="window.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <Text Include="Resources\vertex_shader.txt" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

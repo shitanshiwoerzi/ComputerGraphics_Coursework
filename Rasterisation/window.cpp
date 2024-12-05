@@ -82,6 +82,16 @@ void Window::updateMouse(int x, int y)
 {
 	mousex = x;
 	mousey = y;
+
+	if (firstMouse) {
+		lastX = x;
+		lastY = y;
+		firstMouse = false;
+	}
+	xOffset = x - lastX;
+	yOffset = lastY - y;
+	lastX = x;
+	lastY = y;
 }
 
 void Window::processMessages() {
@@ -92,3 +102,6 @@ void Window::processMessages() {
 		DispatchMessage(&msg);
 	}
 }
+
+int Window::getXOffset() const { return xOffset; }
+int Window::getYOffset() const { return yOffset; }

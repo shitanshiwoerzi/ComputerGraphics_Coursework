@@ -22,4 +22,11 @@ public:
 	void Init(std::string window_name, int window_width, int window_height, int window_x = 0, int window_y = 0);
 	void updateMouse(int x, int y);
 	void processMessages();
+	int getXOffset() const;
+	int getYOffset() const;
+
+private:
+	int lastX, lastY;
+	int xOffset, yOffset;
+	bool firstMouse = true;
 };

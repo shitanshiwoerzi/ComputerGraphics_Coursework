@@ -312,6 +312,7 @@ class multCube {
 class model {
 public:
 	std::vector<Mesh> meshes;
+	std::vector<std::string> textureFilenames;
 
 	void init(std::string filename, DxCore* core) {
 		GEMLoader::GEMModelLoader loader;
@@ -325,14 +326,17 @@ public:
 				memcpy(&v, &gemmeshes[i].verticesStatic[j], sizeof(STATIC_VERTEX));
 				vertices.push_back(v);
 			}
+
+			textureFilenames.push_back(gemmeshes[i].material.find("diffuse").getValue());
 			mesh.init(core, vertices, gemmeshes[i].indices);
 			meshes.push_back(mesh);
 		}
 	}
 
-	void draw(DxCore* core) {
+	void draw(DxCore* core, Shader* shader, textureManager textures, sampler sam) {
 		for (int i = 0; i < meshes.size(); i++)
 		{
+			shader->updateTexturePS(core, "tex", textures.find(textureFilenames[i]), sam.state);
 			meshes[i].draw(core->devicecontext);
 		}
 	}
