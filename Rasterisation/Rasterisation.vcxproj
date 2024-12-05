@@ -131,6 +131,7 @@
     <ClInclude Include="adapter.h" />
     <ClInclude Include="animation.h" />
     <ClInclude Include="camera.h" />
+    <ClInclude Include="collision.h" />
     <ClInclude Include="dxCore.h" />
     <ClInclude Include="GamesEngineeringBase.h" />
     <ClInclude Include="GEMLoader.h" />

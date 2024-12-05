@@ -149,16 +149,6 @@ public:
 	Mesh mesh;
 
 	void init(DxCore* core) {
-		//std::vector<STATIC_VERTEX> vertices;
-		//vertices.push_back(addVertex(mathLib::Vec3(-15, 0, -15), mathLib::Vec3(0, 1, 0), 0, 0));
-		//vertices.push_back(addVertex(mathLib::Vec3(15, 0, -15), mathLib::Vec3(0, 1, 0), 1, 0));
-		//vertices.push_back(addVertex(mathLib::Vec3(-15, 0, 15), mathLib::Vec3(0, 1, 0), 0, 1));
-		//vertices.push_back(addVertex(mathLib::Vec3(15, 0, 15), mathLib::Vec3(0, 1, 0), 1, 1));
-		//std::vector<unsigned int> indices;
-		//indices.push_back(2); indices.push_back(1); indices.push_back(0);
-		//indices.push_back(1); indices.push_back(2); indices.push_back(3);
-		//mesh.init(core, vertices, indices);
-
 		std::vector<STATIC_VERTEX> vertices;
 		vertices.push_back(addVertex(mathLib::Vec3(-5.0f, 0, -5.0f), mathLib::Vec3(0, 1, 0), 0, 0));
 		vertices.push_back(addVertex(mathLib::Vec3(5.0f, 0, -5.0f), mathLib::Vec3(0, 1, 0), 1, 0));

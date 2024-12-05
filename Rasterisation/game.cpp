@@ -53,6 +53,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 	textures.load(dx, "Resources/Textures/T-rex_Base_Color.png");
 	textures.load(dx, "Resources/Textures/MaleDuty_3_OBJ_Serious_Packed0_Diffuse.png");
 	textures.load(dx, "Resources/Textures/arms_1_Albedo.png");
+	textures.load(dx, "Resources/Textures/AC5_Albedo.png");
 	sampler sam;
 	sam.init(dx);
 
