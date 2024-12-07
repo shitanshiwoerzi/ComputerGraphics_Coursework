@@ -41,7 +41,6 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 	mathLib::Vec3 up(0, 1, 0);
 	mathLib::Matrix m;
 	auto p = m.perspectiveProjection(1.f, 60.0f * M_PI / 180.0f, 100.f, 0.1f);
-	//camera camera(0.0f, 5.0f, -10.0f, 0.0f, 0.0f);
 	Player player(mathLib::Vec3(0.0f, 1.0f, 0.0f), 5.0f);
 	FPSCamera camera(&player ,mathLib::Vec3(0.0f, 1.8f, 0.0f));
 

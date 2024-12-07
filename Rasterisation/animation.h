@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "mathLib.h"
 #include <vector>
 #include <map>
@@ -132,47 +132,65 @@ public:
 
 };
 
-class AnimationManager {
+class AnimationController {
 public:
-	std::map<std::string, AnimationInstance> animationInstances;
+	AnimationInstance* animationInstance; // 绑定的动画实例
+	bool isPlaying;                       // 动画是否正在播放
+	bool loop;                            // 是否循环播放
+	float playbackSpeed;                  // 播放速度
 
-	void addInstance(const std::string& name, Animation* animation) {
-		AnimationInstance instance;
-		instance.animation = animation;
-		instance.currentAnimation = "";
-		instance.t = 0.0f;
-		animationInstances[name] = instance;
+	AnimationController(AnimationInstance* instance = nullptr)
+		: animationInstance(instance), isPlaying(false), loop(true), playbackSpeed(1.0f) {}
+
+	// 绑定动画实例
+	void setAnimationInstance(AnimationInstance* instance) {
+		animationInstance = instance;
 	}
 
-	void update(const std::string& name, const std::string& animationName, float dt) {
-		if (animationInstances.find(name) != animationInstances.end()) {
-			animationInstances[name].update(animationName, dt);
+	// 播放动画
+	void play(const std::string& animationName, bool loopAnimation = true, float speed = 1.0f) {
+		if (!animationInstance) return;
+
+		animationInstance->update(animationName, 0); // 切换动画并重置时间
+		loop = loopAnimation;
+		playbackSpeed = speed;
+		isPlaying = true;
+	}
+
+	// 暂停动画
+	void pause() {
+		isPlaying = false;
+	}
+
+	// 停止动画
+	void stop() {
+		if (animationInstance) {
+			animationInstance->resetAnimationTime();
+		}
+		isPlaying = false;
+	}
+
+	// 更新动画（每帧调用）
+	void update(float deltaTime) {
+		if (!animationInstance || !isPlaying) return;
+
+		// 根据播放速度更新动画时间
+		float scaledDeltaTime = deltaTime * playbackSpeed;
+		animationInstance->update(animationInstance->currentAnimation, scaledDeltaTime);
+
+		// 如果动画完成
+		if (!loop && animationInstance->animationFinished()) {
+			stop();
 		}
 	}
 
-	void resetAnimationTime(const std::string& name) {
-		if (animationInstances.find(name) != animationInstances.end()) {
-			animationInstances[name].resetAnimationTime();
-		}
+	// 检查动画是否完成
+	bool isAnimationFinished() const {
+		return animationInstance && animationInstance->animationFinished();
 	}
 
-	bool isAnimationFinished(const std::string& name) {
-		if (animationInstances.find(name) != animationInstances.end()) {
-			return animationInstances[name].animationFinished();
-		}
-		return false;
-	}
-
-	mathLib::Matrix* getAnimationMatrices(const std::string& name) {
-		if (animationInstances.find(name) != animationInstances.end()) {
-			return animationInstances[name].matrices;
-		}
-		return nullptr;
-	}
-
-	void updateAll(float dt) {
-		for (auto& pair : animationInstances) {
-			pair.second.update(pair.second.currentAnimation, dt);
-		}
+	// 检查动画是否正在播放
+	bool isAnimationPlaying() const {
+		return isPlaying;
 	}
 };
