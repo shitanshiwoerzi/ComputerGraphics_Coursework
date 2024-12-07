@@ -137,6 +137,7 @@
     <ClInclude Include="GEMLoader.h" />
     <ClInclude Include="mathLib.h" />
     <ClInclude Include="mesh.h" />
+    <ClInclude Include="player.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="shaderReflection.h" />
     <ClInclude Include="stb_image.h" />

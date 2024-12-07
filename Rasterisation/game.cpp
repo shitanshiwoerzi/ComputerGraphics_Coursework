@@ -42,7 +42,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 	mathLib::Matrix m;
 	auto p = m.perspectiveProjection(1.f, 60.0f * M_PI / 180.0f, 100.f, 0.1f);
 	//camera camera(0.0f, 5.0f, -10.0f, 0.0f, 0.0f);
-	FPSCamera camera(mathLib::Vec3(0.0f, 1.8f, 5.0f));
+	Player player(mathLib::Vec3(0.0f, 1.0f, 0.0f), 5.0f);
+	FPSCamera camera(&player ,mathLib::Vec3(0.0f, 1.8f, 0.0f));
 
 	textureManager textures;
 	textures.load(dx, "Resources/Textures/T-rex_Base_Color.png");
@@ -62,8 +63,16 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 		//mathLib::Vec3 from = mathLib::Vec3(0.0f, 5.0f, -10.0f);
 		mathLib::Matrix v = lookAt(from, to, up);
 
-		camera.processKeyboard(canvas, tim.dt() * 2000);
-		camera.processMouse(canvas);
+		//camera.processKeyboard(canvas, tim.dt() * 2000);
+		//camera.processMouse(canvas);
+		handleInput(player, camera, canvas, tim.dt() * 2000);
+
+		// 更新主角位置（模拟贴地行走）
+		float groundHeight = getGroundHeight(player.position); // 获取地面高度
+		player.stayOnGround(groundHeight);
+
+		// 更新摄像机
+		camera.update();
 
 		mathLib::Matrix cv = camera.getViewMatrix();
 		vp = cv * p;
