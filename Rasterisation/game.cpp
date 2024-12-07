@@ -21,14 +21,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 	plane pl;
 	pl.init(dx);
 
-	cube cub;
-	cub.init(dx);
-
-	sphere sphere;
-	sphere.init(dx, 100, 100, 0.5f);
-
-	//animatedModel gun;
-	//gun.init("Resources/GemModel/Automatic_Carbine_5.gem", dx);
+	animatedModel gun;
+	gun.init("Resources/GemModel/Automatic_Carbine_5.gem", dx);
 
 	animatedModel soldier;
 	soldier.init("Resources/GemModel/Soldier1.gem", dx);
@@ -46,14 +40,18 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 	mathLib::Vec3 to(0, 1, 0);
 	mathLib::Vec3 up(0, 1, 0);
 	mathLib::Matrix m;
-	auto p = m.perspectiveProjection(1.f, 45.0f * M_PI / 180.0f, 100.f, 0.1f);
-	camera camera(0.0f, 5.0f, -10.0f, 0.0f, 0.0f);
+	auto p = m.perspectiveProjection(1.f, 60.0f * M_PI / 180.0f, 100.f, 0.1f);
+	//camera camera(0.0f, 5.0f, -10.0f, 0.0f, 0.0f);
+	FPSCamera camera(mathLib::Vec3(0.0f, 1.8f, 5.0f));
 
 	textureManager textures;
 	textures.load(dx, "Resources/Textures/T-rex_Base_Color.png");
 	textures.load(dx, "Resources/Textures/MaleDuty_3_OBJ_Serious_Packed0_Diffuse.png");
 	textures.load(dx, "Resources/Textures/arms_1_Albedo.png");
 	textures.load(dx, "Resources/Textures/AC5_Albedo.png");
+	textures.load(dx, "Resources/Textures/AC5_Collimator_Albedo.png");
+	textures.load(dx, "Resources/Textures/AC5_Collimator_Glass_Albedo.png");
+	textures.load(dx, "Resources/Textures/AC5_Bullet_Shell_Albedo.png");
 	sampler sam;
 	sam.init(dx);
 
@@ -64,10 +62,10 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 		//mathLib::Vec3 from = mathLib::Vec3(0.0f, 5.0f, -10.0f);
 		mathLib::Matrix v = lookAt(from, to, up);
 
-		mathLib::Matrix cv = camera.getViewMatrix();
-		camera.processKeyboard(canvas.keys, tim.dt() * 2000);
-		camera.processMouseMovement(canvas.getXOffset(), canvas.getYOffset());
+		camera.processKeyboard(canvas, tim.dt() * 2000);
+		camera.processMouse(canvas);
 
+		mathLib::Matrix cv = camera.getViewMatrix();
 		vp = cv * p;
 		mathLib::Matrix soldierWorld = planeWorld.scaling(mathLib::Vec3(0.01f, 0.01f, 0.01f)) * planeWorld.translation(mathLib::Vec3(3.f, 0, 0));
 		mathLib::Matrix dinosaurWorld = planeWorld.rotateY(180);
@@ -78,11 +76,9 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 		//sphere.draw(dx);
 		// //cub.draw(dx);
 
-		//gun.instance.update("fire", tim.dt() * 20);
-
 
 		am.instance.update("Run", tim.dt() * 20);
-		shader->updateConstantVS("animatedMeshBuffer", "W", &dinosaurWorld);
+		shader->updateConstantVS("animatedMeshBuffer", "W", &planeWorld);
 		shader->updateConstantVS("animatedMeshBuffer", "VP", &vp);
 		shader->updateConstantVS("animatedMeshBuffer", "bones", &(am.instance.matrices));
 		shader->apply(dx);
@@ -93,7 +89,19 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 		shader->updateConstantVS("animatedMeshBuffer", "bones", &(soldier.instance.matrices));
 		shader->apply(dx);
 		soldier.draw(dx, shader, textures, sam);
-		//gun.draw(dx, shader, textures, sam);
+
+		mathLib::Matrix gunWorld1 = mathLib::Matrix::rotateX(90);
+		mathLib::Matrix gunScale = mathLib::Matrix::scaling(mathLib::Vec3(0.2f, 0.2f, 0.2f));
+		mathLib::Matrix gunTranslation = mathLib::Matrix::translation(mathLib::Vec3(0.5f, 15.5f, 0.0f));
+		mathLib::Matrix gunWorld = gunTranslation * gunScale * mathLib::Matrix::rotateX(90) * cv.invert();
+
+		//gun.instance.update("Armature|08 Fire", tim.dt());
+		//gun.instance.update("Armature|00 Pose", tim.dt());
+		gun.instance.update("Armature|04 Idle", tim.dt());
+		shader->updateConstantVS("animatedMeshBuffer", "W", &gunWorld);
+		shader->updateConstantVS("animatedMeshBuffer", "bones", &(gun.instance.matrices));
+		shader->apply(dx);
+		gun.draw(dx, shader, textures, sam);
 		canvas.processMessages();
 		dx->present();
 	}

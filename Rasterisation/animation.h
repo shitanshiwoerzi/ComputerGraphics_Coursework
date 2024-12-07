@@ -76,7 +76,7 @@ public:
 	void calcFrame(std::string name, float t, int& frame, float& interpolationFact) {
 		animations[name].calcFrame(t, frame, interpolationFact);
 	}
-	mathLib::Matrix interpolateBoneToGlobal(std::string name, mathLib::Matrix* matrices, int baseFrame, float 						interpolationFact, int boneIndex) {
+	mathLib::Matrix interpolateBoneToGlobal(std::string name, mathLib::Matrix* matrices, int baseFrame, float interpolationFact, int boneIndex) {
 		return animations[name].interpolateBoneToGlobal(matrices, baseFrame, interpolationFact, &skeleton, boneIndex);
 	}
 
@@ -132,3 +132,47 @@ public:
 
 };
 
+class AnimationManager {
+public:
+	std::map<std::string, AnimationInstance> animationInstances;
+
+	void addInstance(const std::string& name, Animation* animation) {
+		AnimationInstance instance;
+		instance.animation = animation;
+		instance.currentAnimation = "";
+		instance.t = 0.0f;
+		animationInstances[name] = instance;
+	}
+
+	void update(const std::string& name, const std::string& animationName, float dt) {
+		if (animationInstances.find(name) != animationInstances.end()) {
+			animationInstances[name].update(animationName, dt);
+		}
+	}
+
+	void resetAnimationTime(const std::string& name) {
+		if (animationInstances.find(name) != animationInstances.end()) {
+			animationInstances[name].resetAnimationTime();
+		}
+	}
+
+	bool isAnimationFinished(const std::string& name) {
+		if (animationInstances.find(name) != animationInstances.end()) {
+			return animationInstances[name].animationFinished();
+		}
+		return false;
+	}
+
+	mathLib::Matrix* getAnimationMatrices(const std::string& name) {
+		if (animationInstances.find(name) != animationInstances.end()) {
+			return animationInstances[name].matrices;
+		}
+		return nullptr;
+	}
+
+	void updateAll(float dt) {
+		for (auto& pair : animationInstances) {
+			pair.second.update(pair.second.currentAnimation, dt);
+		}
+	}
+};

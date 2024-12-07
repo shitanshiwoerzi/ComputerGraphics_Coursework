@@ -1,4 +1,4 @@
-#include "window.h"
+﻿#include "window.h"
 
 Window* window;
 
@@ -76,22 +76,19 @@ void Window::Init(std::string window_name, int window_width, int window_height, 
 	hwnd = CreateWindowEx(WS_EX_APPWINDOW, wname.c_str(), wname.c_str(), style, window_x, window_y, width, height, NULL, NULL, hInstance, this);
 	memset(keys, 0, 256 * sizeof(char));
 	window = this;
+
+	// 
+	ShowCursor(FALSE); // 隐藏鼠标
+	GetClientRect(hwnd, &windowRect); // 获取窗口区域
+	ClientToScreen(hwnd, (POINT*)&windowRect.left);
+	ClientToScreen(hwnd, (POINT*)&windowRect.right);
+	ClipCursor(&windowRect); // 限制鼠标在窗口内
 }
 
 void Window::updateMouse(int x, int y)
 {
 	mousex = x;
 	mousey = y;
-
-	if (firstMouse) {
-		lastX = x;
-		lastY = y;
-		firstMouse = false;
-	}
-	xOffset = x - lastX;
-	yOffset = lastY - y;
-	lastX = x;
-	lastY = y;
 }
 
 void Window::processMessages() {
@@ -103,5 +100,26 @@ void Window::processMessages() {
 	}
 }
 
-int Window::getXOffset() const { return xOffset; }
-int Window::getYOffset() const { return yOffset; }
+// 获取鼠标移动量
+void Window::getMouseMovement(float& deltaX, float& deltaY) {
+	POINT currentCursorPos;
+	GetCursorPos(&currentCursorPos);
+
+	if (firstMouse) {
+		lastX = currentCursorPos.x;
+		lastY = currentCursorPos.y;
+		firstMouse = false;
+	}
+
+	// 计算鼠标移动量
+	deltaX = static_cast<float>(lastX - currentCursorPos.x);	
+	deltaY = static_cast<float>(lastY - currentCursorPos.y);
+
+	// 重置鼠标到窗口中心
+	int centerX = (windowRect.left + windowRect.right) / 2;
+	int centerY = (windowRect.top + windowRect.bottom) / 2;
+	SetCursorPos(centerX, centerY);
+
+	lastX = centerX;
+	lastY = centerY;
+}
