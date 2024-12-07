@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "mathLib.h"
 #include <d3d11.h>
 #include <corecrt_math_defines.h>
@@ -407,5 +407,76 @@ public:
 			meshes[i].draw(core->devicecontext);
 		}
 
+	}
+};
+
+class SkyDome {
+private:
+	Mesh domeMesh;                // 穹顶的网格
+	std::string textureFilename;  // 穹顶纹理文件名
+
+public:
+	// 初始化 Sky Dome
+	void init(DxCore* core, int rings, int segments, float radius, const std::string& textureFile) {
+		textureFilename = textureFile;
+
+		// 创建球体网格
+		std::vector<STATIC_VERTEX> vertices;
+		for (int lat = 0; lat <= rings; ++lat) {
+			float theta = lat * M_PI / rings;
+			float sinTheta = sinf(theta);
+			float cosTheta = cosf(theta);
+
+			for (int lon = 0; lon <= segments; ++lon) {
+				float phi = lon * 2.0f * M_PI / segments;
+				float sinPhi = sinf(phi);
+				float cosPhi = cosf(phi);
+
+				// 计算顶点位置和纹理坐标
+				mathLib::Vec3 position = mathLib::Vec3(radius * sinTheta * cosPhi, radius * cosTheta, radius * sinTheta * sinPhi);
+				mathLib::Vec3 normal = position.normalize();
+				float tu = 1.0f - (float)lon / segments;  // 纹理U坐标
+				float tv = (float)lat / rings;     // 纹理V坐标
+				vertices.push_back(addVertex(position, normal, tu, tv));
+			}
+		}
+
+		// 创建索引缓冲区
+		std::vector<unsigned int> indices;
+		for (int lat = 0; lat < rings; ++lat) {
+			for (int lon = 0; lon < segments; ++lon) {
+				int current = lat * (segments + 1) + lon;
+				int next = current + segments + 1;
+				indices.push_back(current);
+				indices.push_back(next);
+				indices.push_back(current + 1);
+				indices.push_back(current + 1);
+				indices.push_back(next);
+				indices.push_back(next + 1);
+			}
+		}
+
+		// 初始化网格
+		domeMesh.init(core, vertices, indices);
+	}
+
+	// 绘制 Sky Dome
+	void draw(DxCore* core, Shader* shader, textureManager& textures, sampler& sam, const mathLib::Vec3& cameraPosition, mathLib::Matrix& vp) {
+		// 更新穹顶位置到相机中心
+		mathLib::Matrix worldMatrix = mathLib::Matrix::translation(cameraPosition);
+
+		// 更新着色器常量
+		shader->updateConstantVS("staticMeshBuffer", "W", &worldMatrix);
+		shader->updateConstantVS("staticMeshBuffer", "VP", &vp);
+
+		// 绑定纹理并应用着色器
+		shader->apply(core);
+		shader->updateTexturePS(core, "tex", textures.find(textureFilename), sam.state);
+		domeMesh.draw(core->devicecontext);
+	}
+
+	// 卸载纹理
+	void unload(textureManager& textures) {
+		textures.unload(textureFilename);
 	}
 };

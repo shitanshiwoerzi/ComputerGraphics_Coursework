@@ -18,6 +18,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 	std::string tps = "Resources/Shader/texturePixelShader.hlsl";
 	std::string shaderName = "MyShader";
 	std::string planeShaderName = "planeShader";
+	std::string skyShaderName = "skyShader";
 	plane pl;
 	pl.init(dx);
 
@@ -29,10 +30,16 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 
 	animatedModel am;
 	am.init("Resources/GemModel/TRex.gem", dx);
+
+	SkyDome sky;
+	sky.init(dx, 20, 20, 50.0f, "Textures/sunsetSky.png");
+
 	shaders.load(shaderName, avs, tps, dx);
 	shaders.load(planeShaderName, vs, ps, dx);
+	shaders.load(skyShaderName, vs, tps, dx);
 	Shader* shader = shaders.getShader(shaderName);
 	Shader* planeShader = shaders.getShader(planeShaderName);
+	Shader* skyShader = shaders.getShader(skyShaderName);
 	GamesEngineeringBase::Timer tim;
 	float t = 0;
 	mathLib::Matrix planeWorld;
@@ -52,6 +59,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 	textures.load(dx, "Resources/Textures/AC5_Collimator_Albedo.png");
 	textures.load(dx, "Resources/Textures/AC5_Collimator_Glass_Albedo.png");
 	textures.load(dx, "Resources/Textures/AC5_Bullet_Shell_Albedo.png");
+	textures.load(dx, "Resources/Textures/sunsetSky.png");
 	sampler sam;
 	sam.init(dx);
 
@@ -75,6 +83,11 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 
 		mathLib::Matrix cv = camera.getViewMatrix();
 		vp = cv * p;
+
+
+
+		sky.draw(dx, skyShader, textures, sam, camera.position, vp);
+
 		mathLib::Matrix soldierWorld = planeWorld.scaling(mathLib::Vec3(0.01f, 0.01f, 0.01f)) * planeWorld.translation(mathLib::Vec3(3.f, 0, 0));
 		mathLib::Matrix dinosaurWorld = planeWorld.rotateY(180);
 		planeShader->updateConstantVS("staticMeshBuffer", "W", &planeWorld);
@@ -98,7 +111,6 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 		shader->apply(dx);
 		soldier.draw(dx, shader, textures, sam);
 
-		mathLib::Matrix gunWorld1 = mathLib::Matrix::rotateX(90);
 		mathLib::Matrix gunScale = mathLib::Matrix::scaling(mathLib::Vec3(0.2f, 0.2f, 0.2f));
 		mathLib::Matrix gunTranslation = mathLib::Matrix::translation(mathLib::Vec3(0.5f, 15.5f, 0.0f));
 		mathLib::Matrix gunWorld = gunTranslation * gunScale * mathLib::Matrix::rotateX(90) * cv.invert();
@@ -110,6 +122,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 		shader->updateConstantVS("animatedMeshBuffer", "bones", &(gun.instance.matrices));
 		shader->apply(dx);
 		gun.draw(dx, shader, textures, sam);
+
 		canvas.processMessages();
 		dx->present();
 	}
