@@ -122,6 +122,22 @@ namespace mathLib {
 		Vec3& operator/=(const float val) { x /= val; y /= val; z /= val; return *this; }
 		Vec3 operator-() const { return Vec3(-v[0], -v[1], -v[2]); }
 
+		// 支持数组索引方式访问分量
+		float& operator[](int index) {
+			if (index == 0) return x;
+			if (index == 1) return y;
+			if (index == 2) return z;
+			throw std::out_of_range("Vec3 index out of range");
+		}
+
+		// 支持常量对象的分量访问
+		const float& operator[](int index) const {
+			if (index == 0) return x;
+			if (index == 1) return y;
+			if (index == 2) return z;
+			throw std::out_of_range("Vec3 index out of range");
+		}
+
 		// get the length of vector
 		float getLength() const {
 			return sqrtf(SQ(x) + SQ(y) + SQ(z));

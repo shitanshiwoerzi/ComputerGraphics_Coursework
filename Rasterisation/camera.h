@@ -109,6 +109,10 @@ static void handleInput(Player& player, FPSCamera& camera, Window& canvas, float
 
 	// 调整视角
 	camera.processMouse(canvas);
+
+	// 更新主角位置（模拟贴地行走）
+	float groundHeight = getGroundHeight(player.position); // 获取地面高度
+	player.stayOnGround(groundHeight);
 }
 
 static float getGroundHeight(const mathLib::Vec3& position) {

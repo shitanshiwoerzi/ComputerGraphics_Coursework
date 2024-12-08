@@ -82,18 +82,13 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 		//camera.processMouse(canvas);
 		handleInput(player, camera, canvas, tim.dt() * 2000);
 
-		// 更新主角位置（模拟贴地行走）
-		float groundHeight = getGroundHeight(player.position); // 获取地面高度
-		player.stayOnGround(groundHeight);
-
 		// 更新摄像机
 		camera.update();
 
 		mathLib::Matrix cv = camera.getViewMatrix();
 		vp = cv * p;
 
-
-
+		// draw sky dome
 		sky.draw(dx, skyShader, textures, sam, camera.position, vp);
 
 		mathLib::Matrix soldierWorld = planeWorld.scaling(mathLib::Vec3(0.01f, 0.01f, 0.01f)) * planeWorld.translation(mathLib::Vec3(3.f, 0, 0));
