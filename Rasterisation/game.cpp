@@ -16,6 +16,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 	std::string vs = "Resources/Shader/vertexShader.hlsl";
 	std::string ps = "Resources/Shader/pixelShader.hlsl";
 	std::string tps = "Resources/Shader/texturePixelShader.hlsl";
+	std::string normalPS = "Resources/Shader/normalPixelShader.hlsl";
 	std::string shaderName = "MyShader";
 	std::string planeShaderName = "planeShader";
 	std::string skyShaderName = "skyShader";
@@ -34,7 +35,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 	SkyDome sky;
 	sky.init(dx, 20, 20, 50.0f, "Textures/sunsetSky.png");
 
-	shaders.load(shaderName, avs, tps, dx);
+	shaders.load(shaderName, avs, normalPS, dx);
 	shaders.load(planeShaderName, vs, ps, dx);
 	shaders.load(skyShaderName, vs, tps, dx);
 	Shader* shader = shaders.getShader(shaderName);
@@ -53,12 +54,19 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 
 	textureManager textures;
 	textures.load(dx, "Resources/Textures/T-rex_Base_Color.png");
+	textures.load(dx, "Resources/Textures/T-rex_Normal_OpenGL.png");
 	textures.load(dx, "Resources/Textures/MaleDuty_3_OBJ_Serious_Packed0_Diffuse.png");
+	textures.load(dx, "Resources/Textures/MaleDuty_3_OBJ_Serious_Packed0_Normal.png");
 	textures.load(dx, "Resources/Textures/arms_1_Albedo.png");
+	textures.load(dx, "Resources/Textures/arms_1_Normal.png");
 	textures.load(dx, "Resources/Textures/AC5_Albedo.png");
+	textures.load(dx, "Resources/Textures/AC5_Normal.png");
 	textures.load(dx, "Resources/Textures/AC5_Collimator_Albedo.png");
+	textures.load(dx, "Resources/Textures/AC5_Collimator_Normal.png");
 	textures.load(dx, "Resources/Textures/AC5_Collimator_Glass_Albedo.png");
+	textures.load(dx, "Resources/Textures/Automatic_Carbine_5_Collimator_normals.bmp");
 	textures.load(dx, "Resources/Textures/AC5_Bullet_Shell_Albedo.png");
+	textures.load(dx, "Resources/Textures/AC5_Bullet_Shell_Normal.png");
 	textures.load(dx, "Resources/Textures/sunsetSky.png");
 	sampler sam;
 	sam.init(dx);

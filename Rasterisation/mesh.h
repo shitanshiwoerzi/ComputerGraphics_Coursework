@@ -338,6 +338,7 @@ public:
 	Animation animation;
 	AnimationInstance instance;
 	std::vector<std::string> textureFilenames;
+	std::vector<std::string> textureNormalFilenames;
 
 
 	void init(std::string filename, DxCore* core) {
@@ -356,6 +357,7 @@ public:
 
 			// Load texture with filename: gemmeshes[i].material.find("diffuse").getValue()
 			textureFilenames.push_back(gemmeshes[i].material.find("diffuse").getValue());
+			textureNormalFilenames.push_back(gemmeshes[i].material.find("normals").getValue());
 			mesh.init(core, vertices, gemmeshes[i].indices);
 			meshes.push_back(mesh);
 		}
@@ -404,6 +406,7 @@ public:
 		for (int i = 0; i < meshes.size(); i++)
 		{
 			shader->updateTexturePS(core, "tex", textures.find(textureFilenames[i]), sam.state);
+			shader->updateTexturePS(core, "normalMap", textures.find(textureNormalFilenames[i]), sam.state);
 			meshes[i].draw(core->devicecontext);
 		}
 
