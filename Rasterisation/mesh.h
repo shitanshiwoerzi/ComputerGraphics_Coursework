@@ -278,14 +278,16 @@ public:
 		}
 	}
 
-	// ask the GPU to draw a cube
-	void draw(DxCore* core, Shader* shader, mathLib::Matrix& worldMatrix, mathLib::Matrix& vp) {
-
+	void updateBoundingBox(mathLib::Matrix& worldMatrix) {
 		boundingBox.reset();
 		for (auto& vertex : vertices) {
-			vertex.pos = worldMatrix.mulPoint(vertex.pos); // 应用变换矩阵
-			boundingBox.extend(vertex.pos);
+			mathLib::Vec3 transformedPos = worldMatrix.mulPoint(vertex.pos); // 应用变换矩阵
+			boundingBox.extend(transformedPos);
 		}
+	}
+
+	// ask the GPU to draw a cube
+	void draw(DxCore* core, Shader* shader, mathLib::Matrix& worldMatrix, mathLib::Matrix& vp) {
 		shader->updateConstantVS("staticMeshBuffer", "W", &worldMatrix);
 		shader->updateConstantVS("staticMeshBuffer", "VP", &vp);
 		shader->apply(core);
@@ -501,6 +503,7 @@ public:
 		}
 
 		instance.animation = &animation;
+		calculateBoundingBox();
 	}
 
 	void calculateBoundingBox() {

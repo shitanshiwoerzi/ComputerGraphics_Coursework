@@ -115,7 +115,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 	while (true) {
 		dx->clear();
 		t += tim.dt();
-		handleInput(player, camera, canvas, tim.dt() * 20000);
+		handleInput(player, camera, canvas, tim.dt() * 20000, cube.boundingBox);
 		//player.handleCollision(cube);
 		mathLib::Matrix cv = camera.getViewMatrix();
 		vp = cv * p;
@@ -126,7 +126,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 		mathLib::Matrix cubeWorld = planeWorld.translation(mathLib::Vec3(13.f, 0.f, 0.f));
 		mathLib::Matrix dinosaurWorld = planeWorld.rotateY(180);
 		mathLib::Matrix treeWorld = planeWorld.scaling(mathLib::Vec3(0.01f, 0.01f, 0.01f));
-
+		
+		cube.updateBoundingBox(cubeWorld);
 		cube.draw(dx, planeShader, cubeWorld, vp);
 		pl.draw(dx, planeShader, textures, sam, planeWorld, vp);
 		grasses.draw(dx, textures, treeShader, sam, vp);

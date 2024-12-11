@@ -114,6 +114,11 @@ public:
 
 		position = player->position - mathLib::Vec3(offsetX, offsetY, offsetZ);
 		target = player->position; // 相机目标点始终是主角
+
+		// 确保相机在平面以上
+		if (position.y < player->position.y + 1.0f) { // 1.0f 是相机与地面的最小高度
+			position.y = player->position.y + 1.0f;
+		}
 	}
 
 	// 处理鼠标输入
@@ -149,7 +154,7 @@ static float getGroundHeight(const mathLib::Vec3& position) {
 	return 0.0f; // 地面高度恒定为 0
 }
 
-static void handleInput(Player& player, TPSCamera& camera, Window& canvas, float deltaTime) {
+static void handleInput(Player& player, TPSCamera& camera, Window& canvas, float deltaTime, AABB& obstacle) {
 	// 主角的前向和右向（由相机计算）
 	mathLib::Vec3 forward = camera.target - camera.position;
 	forward.y = 0; // 忽略垂直方向
@@ -170,7 +175,7 @@ static void handleInput(Player& player, TPSCamera& camera, Window& canvas, float
 
 	if (!(moveDirection.x == 0 && moveDirection.y == 0 && moveDirection.z == 0)) {
 		moveDirection = moveDirection.normalize();
-		player.move(moveDirection, deltaTime);
+		player.move(moveDirection, deltaTime, obstacle);
 	}
 
 	// 更新主角的动画状态
@@ -181,8 +186,8 @@ static void handleInput(Player& player, TPSCamera& camera, Window& canvas, float
 		player.updateAnimation("idle", deltaTime);    // 待机动画
 	}
 
-	// 更新主角模型
-	player.updateModel();
+	// 更新主角碰撞盒
+	player.updateBoundingBox();
 
 	// 处理相机鼠标输入
 	camera.processMouse(canvas);

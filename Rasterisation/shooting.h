@@ -112,14 +112,14 @@ public:
 	}
 };
 
-static void handleShooting(Window& canvas, FPSCamera& camera, ShootingSystem& shootingSystem, float deltaTime) {
-	if (canvas.mouseButtons[0]) {
-		// Get shooting direction from camera
-		mathLib::Vec3 shootDirection = camera.front;
-		mathLib::Vec3 shootPosition = camera.player->position + mathLib::Vec3(0.0f, 1.8f, 0.0f);
-
-		shootingSystem.shoot(shootPosition, shootDirection);
-	}
-
-	shootingSystem.update(deltaTime);
-}
+//static void handleShooting(Window& canvas, TPSCamera& camera, ShootingSystem& shootingSystem, float deltaTime) {
+//	if (canvas.mouseButtons[0]) {
+//		// Get shooting direction from camera
+//		mathLib::Vec3 shootDirection = camera.front;
+//		mathLib::Vec3 shootPosition = camera.player->position + mathLib::Vec3(0.0f, 1.8f, 0.0f);
+//
+//		shootingSystem.shoot(shootPosition, shootDirection);
+//	}
+//
+//	shootingSystem.update(deltaTime);
+//}
