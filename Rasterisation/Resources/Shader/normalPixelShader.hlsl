@@ -25,9 +25,16 @@ float4 PS(PS_INPUT input) : SV_Target0
     float3 worldNormal = normalize(mul(normalMapValue, TBN));
 
     // Example lighting: Simple diffuse lighting
+    float3 ambientColor = float3(0.3, 0.3, 0.3);
+    float ambientIntensity = 0.5;
+    float3 ambient = ambientColor * ambientIntensity;
+    float lightIntensity = 2;
     float3 lightDir = normalize(float3(0.0, 1.0, 0.5)); // Light direction
-    float diffuse = max(dot(worldNormal, lightDir), 0.0);
-
+    float diffuse = max(dot(worldNormal, lightDir), 0.0) * lightIntensity;
+    if (colour.a < 0.5)
+    {
+        discard;
+    }
     // Output the final color
-    return float4(colour.rgb * diffuse, colour.a);
+    return float4(colour.rgb * diffuse + ambient, colour.a);
 }

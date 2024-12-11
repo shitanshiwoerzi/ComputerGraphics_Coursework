@@ -7,6 +7,7 @@
 #include "dxCore.h"
 #include "shader.h"
 #include "texture.h"
+#include "collision.h"
 
 struct STATIC_VERTEX
 {
@@ -105,6 +106,8 @@ public:
 	ID3D11Buffer* vertexBuffer;
 	int indicesSize;
 	UINT strides;
+	std::vector<ANIMATED_VERTEX> animatedVertices;
+	std::vector<STATIC_VERTEX> staticVertices;
 
 	void init(DxCore* core, void* vertices, int vertexSizeInBytes, int numVertices, unsigned int* indices, int numIndices) {
 		D3D11_BUFFER_DESC bd;
@@ -126,11 +129,13 @@ public:
 
 	void init(DxCore* core, std::vector<STATIC_VERTEX> vertices, std::vector<unsigned int> indices)
 	{
+		staticVertices = vertices;
 		init(core, &vertices[0], sizeof(STATIC_VERTEX), vertices.size(), &indices[0], indices.size());
 	}
 
 	void init(DxCore* core, std::vector<ANIMATED_VERTEX> vertices, std::vector<unsigned int> indices)
 	{
+		animatedVertices = vertices;
 		init(core, &vertices[0], sizeof(ANIMATED_VERTEX), vertices.size(), &indices[0], indices.size());
 	}
 
@@ -149,19 +154,58 @@ public:
 	Mesh mesh;
 
 	void init(DxCore* core) {
+		//std::vector<STATIC_VERTEX> vertices;
+		//vertices.push_back(addVertex(mathLib::Vec3(-150.0f, 0, -150.0f), mathLib::Vec3(0, 1, 0), 0, 0));
+		//vertices.push_back(addVertex(mathLib::Vec3(150.0f, 0, -150.0f), mathLib::Vec3(0, 1, 0), 1, 0));
+		//vertices.push_back(addVertex(mathLib::Vec3(-150.0f, 0, 150.0f), mathLib::Vec3(0, 1, 0), 0, 1));
+		//vertices.push_back(addVertex(mathLib::Vec3(150.0f, 0, 150.0f), mathLib::Vec3(0, 1, 0), 1, 1));
+		//std::vector<unsigned int> indices;
+		//indices.push_back(2); indices.push_back(1); indices.push_back(0);
+		//indices.push_back(1); indices.push_back(2); indices.push_back(3);
 		std::vector<STATIC_VERTEX> vertices;
-		vertices.push_back(addVertex(mathLib::Vec3(-5.0f, 0, -5.0f), mathLib::Vec3(0, 1, 0), 0, 0));
-		vertices.push_back(addVertex(mathLib::Vec3(5.0f, 0, -5.0f), mathLib::Vec3(0, 1, 0), 1, 0));
-		vertices.push_back(addVertex(mathLib::Vec3(-5.0f, 0, 5.0f), mathLib::Vec3(0, 1, 0), 0, 1));
-		vertices.push_back(addVertex(mathLib::Vec3(5.0f, 0, 5.0f), mathLib::Vec3(0, 1, 0), 1, 1));
 		std::vector<unsigned int> indices;
-		indices.push_back(2); indices.push_back(1); indices.push_back(0);
-		indices.push_back(1); indices.push_back(2); indices.push_back(3);
+		int gridSize = 10;
+		float planeSize = 150.0f;
+		float step = planeSize * 2.0f / gridSize;
+
+		// 生成顶点
+		for (int z = 0; z <= gridSize; ++z) {
+			for (int x = 0; x <= gridSize; ++x) {
+				float posX = -planeSize + x * step;
+				float posZ = -planeSize + z * step;
+				float u = static_cast<float>(x) / gridSize;
+				float v = static_cast<float>(z) / gridSize;
+				vertices.push_back(addVertex(mathLib::Vec3(posX, 0.0f, posZ), mathLib::Vec3(0, 1, 0), u, v));
+			}
+		}
+
+		// 生成索引
+		for (int z = 0; z < gridSize; ++z) {
+			for (int x = 0; x < gridSize; ++x) {
+				int topLeft = z * (gridSize + 1) + x;
+				int topRight = topLeft + 1;
+				int bottomLeft = (z + 1) * (gridSize + 1) + x;
+				int bottomRight = bottomLeft + 1;
+
+				indices.push_back(topLeft);
+				indices.push_back(bottomLeft);
+				indices.push_back(topRight);
+
+				indices.push_back(topRight);
+				indices.push_back(bottomLeft);
+				indices.push_back(bottomRight);
+			}
+		}
 		mesh.init(core, vertices, indices);
 	}
 
 	// ask the GPU to draw a plane
-	void draw(DxCore* core) {
+	void draw(DxCore* core, Shader* shader, textureManager textures, sampler sam, mathLib::Matrix worldMatrix, mathLib::Matrix vp) {
+		shader->updateConstantVS("staticMeshBuffer", "W", &worldMatrix);
+		shader->updateConstantVS("staticMeshBuffer", "VP", &vp);
+		shader->apply(core);
+		shader->updateTexturePS(core, "tex", textures.find("Textures/grass.png"), sam.state);
+		//shader->updateTexturePS(core, "normalMap", textures.find("Textures/grass_normal.png"), sam.state);
 		mesh.draw(core->devicecontext);
 	}
 };
@@ -303,6 +347,7 @@ class model {
 public:
 	std::vector<Mesh> meshes;
 	std::vector<std::string> textureFilenames;
+	std::vector<std::string> textureNormalFilenames;
 
 	void init(std::string filename, DxCore* core) {
 		GEMLoader::GEMModelLoader loader;
@@ -318,17 +363,59 @@ public:
 			}
 
 			textureFilenames.push_back(gemmeshes[i].material.find("diffuse").getValue());
+			textureNormalFilenames.push_back(gemmeshes[i].material.find("normals").getValue());
 			mesh.init(core, vertices, gemmeshes[i].indices);
 			meshes.push_back(mesh);
 		}
 	}
 
-	void draw(DxCore* core, Shader* shader, textureManager textures, sampler sam) {
+	void draw(DxCore* core, Shader* shader, textureManager textures, sampler sam, mathLib::Matrix worldMatrix, mathLib::Matrix vp) {
+		shader->updateConstantVS("staticMeshBuffer", "W", &worldMatrix);
+		shader->updateConstantVS("staticMeshBuffer", "VP", &vp);
+		shader->apply(core);
 		for (int i = 0; i < meshes.size(); i++)
 		{
 			shader->updateTexturePS(core, "tex", textures.find(textureFilenames[i]), sam.state);
+			shader->updateTexturePS(core, "normalMap", textures.find(textureNormalFilenames[i]), sam.state);
 			meshes[i].draw(core->devicecontext);
 		}
+	}
+};
+
+class forest {
+public:
+	std::vector<mathLib::Matrix> transforms; // 每棵树的变换矩阵
+	model tree; // 单个树的模型
+
+	void init(const std::string& modelFilename, DxCore* dx, int treeCount) {
+		tree.init(modelFilename, dx);
+
+		// 随机生成树的变换
+		for (int i = 0; i < treeCount; ++i) {
+			float x = randFloat(-50.0f, 50.0f); // 随机 X 坐标
+			float z = randFloat(-50.0f, 50.0f); // 随机 Z 坐标
+			float y = 0.0f;                     // 树固定在地面上
+
+			float scale = randFloat(0.01f, 0.03f); // 随机缩放比例
+			float rotation = randFloat(0.0f, 360.0f); // 随机旋转角度
+
+			mathLib::Matrix worldMatrix =
+				mathLib::Matrix::scaling(mathLib::Vec3(scale, scale, scale)) *
+				mathLib::Matrix::rotateY(rotation) *
+				mathLib::Matrix::translation(mathLib::Vec3(x, y, z));
+
+			transforms.push_back(worldMatrix);
+		}
+	}
+
+	void draw(DxCore* dx, textureManager& textures, Shader* shader, sampler& sam, mathLib::Matrix& vp) {
+		for (auto& transform : transforms)
+			tree.draw(dx, shader, textures, sam, transform, vp);
+	}
+
+private:
+	float randFloat(float min, float max) {
+		return min + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (max - min)));
 	}
 };
 
@@ -339,6 +426,7 @@ public:
 	AnimationInstance instance;
 	std::vector<std::string> textureFilenames;
 	std::vector<std::string> textureNormalFilenames;
+	AABB bounds;
 
 
 	void init(std::string filename, DxCore* core) {
@@ -401,8 +489,36 @@ public:
 		instance.animation = &animation;
 	}
 
+	void calculateBoundingBox() {
+		if (meshes.empty()) return;
 
-	void draw(DxCore* core, Shader* shader, textureManager textures, sampler sam) {
+		mathLib::Vec3 minPos(FLT_MAX, FLT_MAX, FLT_MAX);
+		mathLib::Vec3 maxPos(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+		for (const auto& mesh : meshes) {
+			std::vector<ANIMATED_VERTEX> vertices;
+			for (const auto& vertex : mesh.animatedVertices) {
+				const mathLib::Vec3& pos = vertex.pos;
+
+				if (pos.x < minPos.x) minPos.x = pos.x;
+				if (pos.y < minPos.y) minPos.y = pos.y;
+				if (pos.z < minPos.z) minPos.z = pos.z;
+
+				if (pos.x > maxPos.x) maxPos.x = pos.x;
+				if (pos.y > maxPos.y) maxPos.y = pos.y;
+				if (pos.z > maxPos.z) maxPos.z = pos.z;
+			}
+		}
+
+		bounds.min = minPos;
+		bounds.max = maxPos;
+	}
+
+	void draw(DxCore* core, Shader* shader, textureManager textures, sampler sam, mathLib::Matrix& worldMatrix, mathLib::Matrix& vp) {
+		shader->updateConstantVS("animatedMeshBuffer", "W", &worldMatrix);
+		shader->updateConstantVS("animatedMeshBuffer", "VP", &vp);
+		shader->updateConstantVS("animatedMeshBuffer", "bones", &(this->instance.matrices));
+		shader->apply(core);
 		for (int i = 0; i < meshes.size(); i++)
 		{
 			shader->updateTexturePS(core, "tex", textures.find(textureFilenames[i]), sam.state);

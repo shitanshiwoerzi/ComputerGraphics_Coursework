@@ -140,6 +140,7 @@
     <ClInclude Include="player.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="shaderReflection.h" />
+    <ClInclude Include="shooting.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="texture.h" />
     <ClInclude Include="window.h" />

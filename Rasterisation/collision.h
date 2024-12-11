@@ -1,6 +1,9 @@
 ﻿#pragma once
 #include "mathLib.h"
 
+class Sphere;
+class Ray;
+
 class AABB
 {
 public:
@@ -24,33 +27,9 @@ public:
 			min.z <= other.max.z && max.z >= other.min.z);
 	}
 
-	bool intersects(const Sphere& sphere) const {
-		float distSquared = 0.0f;
-		for (int i = 0; i < 3; ++i) {
-			float v = sphere.centre[i];
-			if (v < min[i]) distSquared += (min[i] - v) * (min[i] - v);
-			if (v > max[i]) distSquared += (v - max[i]) * (v - max[i]);
-		}
-		return distSquared <= sphere.radius * sphere.radius;
-	}
+	bool intersects(const Sphere& sphere);
 
-	bool intersects(const Ray& ray, float& tmin, float& tmax) const {
-		tmin = 0.0f;
-		tmax = FLT_MAX;
-
-		for (int i = 0; i < 3; ++i) {
-			float t1 = (min[i] - ray.o[i]) * ray.invdir[i];
-			float t2 = (max[i] - ray.o[i]) * ray.invdir[i];
-
-			if (t1 > t2) std::swap(t1, t2);
-
-			tmin = max(tmin, t1);
-			tmax = min(tmax, t2);
-
-			if (tmin > tmax) return false;
-		}
-		return true;
-	}
+	bool intersects(Ray& ray, float& tmin, float& tmax);
 };
 
 class OOBB
@@ -69,33 +48,7 @@ public:
 		axes[2] = _zAxis.normalize();
 	}
 
-	bool intersects(const Ray& ray, float& tmin, float& tmax) {
-		tmin = 0.0f;
-		tmax = FLT_MAX;
-
-		mathLib::Vec3 p = center - ray.o;
-
-		for (int i = 0; i < 3; ++i) {
-			float e = dot(p, axes[i]);
-			float f = dot(ray.dir, axes[i]);
-
-			if (std::abs(f) > 0.0001f) {
-				float t1 = (e - halfExtents[i]) / f;
-				float t2 = (e + halfExtents[i]) / f;
-
-				if (t1 > t2) std::swap(t1, t2);
-
-				tmin = max(tmin, t1);
-				tmax = min(tmax, t2);
-
-				if (tmin > tmax) return false;
-			}
-			else if (-e - halfExtents[i] > 0.0f || -e + halfExtents[i] < 0.0f) {
-				return false;
-			}
-		}
-		return true;
-	}
+	bool intersects(Ray& ray, float& tmin, float& tmax);
 
 	bool intersects(AABB& aabb) {
 		// Get the axes to test (OOBB axes + AABB axes)
@@ -160,7 +113,7 @@ public:
 	}
 
 	// 检查与 AABB 是否相交
-	bool intersects(const AABB& aabb) const {
+	bool intersects(const AABB& aabb) {
 		float distSquared = 0.0f;
 		for (int i = 0; i < 3; ++i) {
 			float v = centre[i];
@@ -171,28 +124,7 @@ public:
 	}
 
 	// 检查与射线是否相交，并返回最近的交点
-	bool intersects(Ray& ray, float& t) {
-		mathLib::Vec3 oc = ray.o - centre;
-
-		// 求解射线方程：t^2 * (dir·dir) + 2t * (oc·dir) + (oc·oc - r^2) = 0
-		float a = dot(ray.dir, ray.dir);
-		float b = 2.0f * dot(oc, ray.dir);
-		float c = dot(oc, oc) - radius * radius;
-		float discriminant = b * b - 4 * a * c;
-
-		if (discriminant < 0) {
-			return false; // 无解，射线未与球体相交
-		}
-
-		// 求两个交点
-		float sqrtDisc = std::sqrt(discriminant);
-		float t0 = (-b - sqrtDisc) / (2.0f * a);
-		float t1 = (-b + sqrtDisc) / (2.0f * a);
-
-		// 返回最近的正交点
-		t = (t0 > 0) ? t0 : t1;
-		return t > 0;
-	}
+	bool intersects(Ray& ray, float& t);
 };
 
 class Ray
@@ -280,7 +212,7 @@ public:
 	}
 
 	// 检测与 AABB 的相交，返回参数 tmin 和 tmax
-	bool intersectsAABB(const AABB& box, float& tmin, float& tmax) const {
+	bool intersectsAABB(const AABB& box, float& tmin, float& tmax) {
 		tmin = 0.0f;
 		tmax = FLT_MAX;
 
@@ -298,3 +230,86 @@ public:
 		return true;
 	}
 };
+
+bool AABB::intersects(const Sphere& sphere) {
+	float distSquared = 0.0f;// 初始化球体中心到 AABB 的最短距离平方
+	for (int i = 0; i < 3; ++i) {// 遍历 x, y, z 三个坐标轴
+		float v = sphere.centre[i];  // 获取球体中心在当前轴的坐标
+		// 球体中心在 AABB 当前轴范围之外的情况
+		if (v < min[i]) distSquared += (min[i] - v) * (min[i] - v);
+		if (v > max[i]) distSquared += (v - max[i]) * (v - max[i]);
+	}
+	std::cout << "Distance Squared: " << distSquared << "\n";
+	std::cout << "Sphere Radius Squared: " << sphere.radius * sphere.radius << "\n";
+	// 比较球体中心到 AABB 的最短距离平方与球体半径平方
+	return distSquared <= sphere.radius * sphere.radius;
+}
+
+bool AABB::intersects(Ray& ray, float& tmin, float& tmax) {
+	tmin = 0.0f;
+	tmax = FLT_MAX;
+
+	for (int i = 0; i < 3; ++i) {
+		float t1 = (min[i] - ray.o[i]) * ray.invdir[i];
+		float t2 = (max[i] - ray.o[i]) * ray.invdir[i];
+
+		if (t1 > t2) std::swap(t1, t2);
+
+		tmin = max(tmin, t1);
+		tmax = min(tmax, t2);
+
+		if (tmin > tmax) return false;
+	}
+	return true;
+}
+
+bool OOBB::intersects(Ray& ray, float& tmin, float& tmax) {
+	tmin = 0.0f;
+	tmax = FLT_MAX;
+
+	mathLib::Vec3 p = center - ray.o;
+
+	for (int i = 0; i < 3; ++i) {
+		float e = dot(p, axes[i]);
+		float f = dot(ray.dir, axes[i]);
+
+		if (std::abs(f) > 0.0001f) {
+			float t1 = (e - halfExtents[i]) / f;
+			float t2 = (e + halfExtents[i]) / f;
+
+			if (t1 > t2) std::swap(t1, t2);
+
+			tmin = max(tmin, t1);
+			tmax = min(tmax, t2);
+
+			if (tmin > tmax) return false;
+		}
+		else if (-e - halfExtents[i] > 0.0f || -e + halfExtents[i] < 0.0f) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool Sphere::intersects(Ray& ray, float& t) {
+	mathLib::Vec3 oc = ray.o - centre;
+
+	// 求解射线方程：t^2 * (dir·dir) + 2t * (oc·dir) + (oc·oc - r^2) = 0
+	float a = dot(ray.dir, ray.dir);
+	float b = 2.0f * dot(oc, ray.dir);
+	float c = dot(oc, oc) - radius * radius;
+	float discriminant = b * b - 4 * a * c;
+
+	if (discriminant < 0) {
+		return false; // 无解，射线未与球体相交
+	}
+
+	// 求两个交点
+	float sqrtDisc = std::sqrt(discriminant);
+	float t0 = (-b - sqrtDisc) / (2.0f * a);
+	float t1 = (-b + sqrtDisc) / (2.0f * a);
+
+	// 返回最近的正交点
+	t = (t0 > 0) ? t0 : t1;
+	return t > 0;
+}

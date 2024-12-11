@@ -86,6 +86,10 @@ private:
 	}
 };
 
+static float getGroundHeight(const mathLib::Vec3& position) {
+	return 0.0f; // 地面高度恒定为 0
+}
+
 static void handleInput(Player& player, FPSCamera& camera, Window& canvas, float deltaTime) {
 	// 主角的前向和右向
 	mathLib::Vec3 forward = camera.front;
@@ -113,8 +117,4 @@ static void handleInput(Player& player, FPSCamera& camera, Window& canvas, float
 	// 更新主角位置（模拟贴地行走）
 	float groundHeight = getGroundHeight(player.position); // 获取地面高度
 	player.stayOnGround(groundHeight);
-}
-
-static float getGroundHeight(const mathLib::Vec3& position) {
-	return 0.0f; // 地面高度恒定为 0
 }
