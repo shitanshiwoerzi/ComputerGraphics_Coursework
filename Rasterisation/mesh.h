@@ -213,17 +213,18 @@ public:
 class cube {
 public:
 	Mesh mesh;
+	AABB boundingBox;
+	std::vector<STATIC_VERTEX> vertices;
 
 	void init(DxCore* core) {
-		std::vector<STATIC_VERTEX> vertices;
-		mathLib::Vec3 p0 = mathLib::Vec3(-0.15f, -0.15f, -0.15f);
-		mathLib::Vec3 p1 = mathLib::Vec3(0.15f, -0.15f, -0.15f);
-		mathLib::Vec3 p2 = mathLib::Vec3(0.15f, 0.15f, -0.15f);
-		mathLib::Vec3 p3 = mathLib::Vec3(-0.15f, 0.15f, -0.15f);
-		mathLib::Vec3 p4 = mathLib::Vec3(-0.15f, -0.15f, 0.15f);
-		mathLib::Vec3 p5 = mathLib::Vec3(0.15f, -0.15f, 0.15f);
-		mathLib::Vec3 p6 = mathLib::Vec3(0.15f, 0.15f, 0.15f);
-		mathLib::Vec3 p7 = mathLib::Vec3(-0.15f, 0.15f, 0.15f);
+		mathLib::Vec3 p0 = mathLib::Vec3(-1.5f, -1.5f, -1.5f);
+		mathLib::Vec3 p1 = mathLib::Vec3(1.5f, -1.5f, -1.5f);
+		mathLib::Vec3 p2 = mathLib::Vec3(1.5f, 1.5f, -1.5f);
+		mathLib::Vec3 p3 = mathLib::Vec3(-1.5f, 1.5f, -1.5f);
+		mathLib::Vec3 p4 = mathLib::Vec3(-1.5f, -1.5f, 1.5f);
+		mathLib::Vec3 p5 = mathLib::Vec3(1.5f, -1.5f, 1.5f);
+		mathLib::Vec3 p6 = mathLib::Vec3(1.5f, 1.5f, 1.5f);
+		mathLib::Vec3 p7 = mathLib::Vec3(-1.5f, 1.5f, 1.5f);
 
 		vertices.push_back(addVertex(p0, mathLib::Vec3(0.0f, 0.0f, -1.0f), 0.0f, 1.0f));
 		vertices.push_back(addVertex(p1, mathLib::Vec3(0.0f, 0.0f, -1.0f), 1.0f, 1.0f));
@@ -271,10 +272,23 @@ public:
 		indices.push_back(20); indices.push_back(22); indices.push_back(23);
 
 		mesh.init(core, vertices, indices);
+
+		for (auto& vertex : vertices) {
+			boundingBox.extend(vertex.pos);
+		}
 	}
 
-	// ask the GPU to draw a plane
-	void draw(DxCore* core) {
+	// ask the GPU to draw a cube
+	void draw(DxCore* core, Shader* shader, mathLib::Matrix& worldMatrix, mathLib::Matrix& vp) {
+
+		boundingBox.reset();
+		for (auto& vertex : vertices) {
+			vertex.pos = worldMatrix.mulPoint(vertex.pos); // 应用变换矩阵
+			boundingBox.extend(vertex.pos);
+		}
+		shader->updateConstantVS("staticMeshBuffer", "W", &worldMatrix);
+		shader->updateConstantVS("staticMeshBuffer", "VP", &vp);
+		shader->apply(core);
 		mesh.draw(core->devicecontext);
 	}
 };
@@ -369,7 +383,7 @@ public:
 		}
 	}
 
-	void draw(DxCore* core, Shader* shader, textureManager textures, sampler sam, mathLib::Matrix worldMatrix, mathLib::Matrix vp) {
+	void draw(DxCore* core, Shader* shader, textureManager textures, sampler sam, mathLib::Matrix worldMatrix, mathLib::Matrix& vp) {
 		shader->updateConstantVS("staticMeshBuffer", "W", &worldMatrix);
 		shader->updateConstantVS("staticMeshBuffer", "VP", &vp);
 		shader->apply(core);

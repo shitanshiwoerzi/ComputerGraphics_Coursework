@@ -68,6 +68,9 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 	plane pl;
 	pl.init(dx);
 
+	cube cube;
+	cube.init(dx);
+
 	forest grasses;
 	grasses.init("Resources/GemModel/grass_003.gem", dx, 30);
 
@@ -102,59 +105,34 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 	mathLib::Vec3 up(0, 1, 0);
 	mathLib::Matrix m;
 	auto p = m.perspectiveProjection(1.f, 60.0f * M_PI / 180.0f, 200.f, 0.1f);
-	Player player(mathLib::Vec3(0.0f, 1.0f, 0.0f), 5.0f);
-	FPSCamera camera(&player, mathLib::Vec3(0.0f, 1.8f, 0.0f));
-	ShootingSystem shootingSystem(&gun);
+	Player player(mathLib::Vec3(0.0f, 1.0f, 0.0f), 5.0f, &soldier);
+	TPSCamera camera(&player, 5.0f);
 
 	am.calculateBoundingBox();
-	shootingSystem.addEnemy(Enemy(am.bounds.min, am.bounds.max, 100));
-
 	sampler sam;
 	sam.init(dx);
 
 	while (true) {
 		dx->clear();
 		t += tim.dt();
-		handleInput(player, camera, canvas, tim.dt() *200000);
-
-		// update camera
-		camera.update();
-		handleShooting(canvas, camera, shootingSystem, tim.dt() * 20);
+		handleInput(player, camera, canvas, tim.dt() * 20000);
+		//player.handleCollision(cube);
 		mathLib::Matrix cv = camera.getViewMatrix();
 		vp = cv * p;
 		// draw sky dome
 		sky.draw(dx, skyShader, textures, sam, camera.position, vp);
 
 		// world Matrix
-		mathLib::Matrix soldierWorld = planeWorld.scaling(mathLib::Vec3(0.01f, 0.01f, 0.01f)) * planeWorld.translation(mathLib::Vec3(3.f, 0, 0));
+		mathLib::Matrix cubeWorld = planeWorld.translation(mathLib::Vec3(13.f, 0.f, 0.f));
 		mathLib::Matrix dinosaurWorld = planeWorld.rotateY(180);
 		mathLib::Matrix treeWorld = planeWorld.scaling(mathLib::Vec3(0.01f, 0.01f, 0.01f));
-		mathLib::Matrix gunScale = mathLib::Matrix::scaling(mathLib::Vec3(0.2f, 0.2f, 0.2f));
-		mathLib::Matrix gunTranslation = mathLib::Matrix::translation(mathLib::Vec3(0.5f, 15.5f, 0.0f));
-		mathLib::Matrix gunWorld = gunTranslation * gunScale * mathLib::Matrix::rotateX(90) * cv.invert();
 
+		cube.draw(dx, planeShader, cubeWorld, vp);
 		pl.draw(dx, planeShader, textures, sam, planeWorld, vp);
 		grasses.draw(dx, textures, treeShader, sam, vp);
 		trees.draw(dx, textures, treeShader, sam, vp);
+		player.draw(dx, shader, textures, sam, vp);
 		//renderTree(t, tree, treeShader, treeWorld, vp, dx, textures, sam);
-		//renderEnemies(shootingSystem.enemies, shader, dx, textures, sam, vp, tim.dt() * 20, am);
-
-		for (const auto& enemy : shootingSystem.enemies) {
-			if (!enemy.isAlive) continue;
-
-			am.instance.update("Run", tim.dt());
-
-			mathLib::Matrix worldMatrix = mathLib::Matrix::translation((enemy.bounds.min + enemy.bounds.max) * 0.5f);
-			// Render enemy model
-			am.draw(dx, shader, textures, sam, worldMatrix, vp);
-		}
-
-		soldier.instance.update("walking", tim.dt() * 20);
-		soldier.draw(dx, shader, textures, sam, soldierWorld, vp);
-
-		gun.instance.update("Armature|04 Idle", tim.dt());
-		gun.draw(dx, shader, textures, sam, gunWorld, vp);
-
 		canvas.processMessages();
 		dx->present();
 	}
