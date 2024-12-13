@@ -162,32 +162,44 @@ static void handleInput(Player& player, TPSCamera& camera, Window& canvas, float
 
 	mathLib::Vec3 right = mathLib::Vec3(0.0f, 1.0f, 0.0f).cross(forward).normalize();
 
-	// 移动主角
-	mathLib::Vec3 moveDirection(0.0f, 0.0f, 0.0f);
-	if (canvas.keys['W'])
-		moveDirection += forward;
-	if (canvas.keys['S'])
-		moveDirection -= forward;
-	if (canvas.keys['D'])
-		moveDirection -= right;
-	if (canvas.keys['A'])
-		moveDirection += right;
-
-	if (!(moveDirection.x == 0 && moveDirection.y == 0 && moveDirection.z == 0)) {
-		moveDirection = moveDirection.normalize();
-		player.move(moveDirection, deltaTime, obstacle);
+	// 攻击逻辑
+	if (canvas.keys['J'] && !player.isAttacking) {
+		player.isAttacking = true;
+		player.attackAnimationTime = 0.0f; // 重置攻击动画时间
+		player.updateAnimation("attack", deltaTime); // 切换到攻击动画
 	}
 
-	// 更新主角的动画状态
-	if (moveDirection.getLengthSquare() > 0.0f) {
-		player.updateAnimation("walking", deltaTime); // 行走动画
+	// 移动主角
+	if (!player.isAttacking) {
+		mathLib::Vec3 moveDirection(0.0f, 0.0f, 0.0f);
+		if (canvas.keys['W'])
+			moveDirection += forward;
+		if (canvas.keys['S'])
+			moveDirection -= forward;
+		if (canvas.keys['D'])
+			moveDirection -= right;
+		if (canvas.keys['A'])
+			moveDirection += right;
+
+		if (!(moveDirection.x == 0 && moveDirection.y == 0 && moveDirection.z == 0)) {
+			moveDirection = moveDirection.normalize();
+		}
+
+		player.update(moveDirection, forward, obstacle, deltaTime);
 	}
 	else {
-		player.updateAnimation("idle", deltaTime);    // 待机动画
+		player.attackAnimationTime += deltaTime;
+
+		// 检查攻击动画是否播放完毕
+		if (player.attackAnimationTime >= player.attackDuration) {
+			player.isAttacking = false; // 动画结束
+			player.updateAnimation("Idle", deltaTime); // 切换到待机动画
+		}
+		else {
+			player.updateAnimation("attack", deltaTime); // 持续播放攻击动画
+		}
 	}
 
-	// 更新主角碰撞盒
-	player.updateBoundingBox();
 
 	// 处理相机鼠标输入
 	camera.processMouse(canvas);

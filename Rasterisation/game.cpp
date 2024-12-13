@@ -77,14 +77,11 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 	forest trees;
 	trees.init("Resources/GemModel/bamboo.gem", dx, 30);
 
-	animatedModel gun;
-	gun.init("Resources/GemModel/Automatic_Carbine_5.gem", dx);
+	//animatedModel soldier;
+	//soldier.init("Resources/GemModel/Soldier1.gem", dx);
 
-	animatedModel soldier;
-	soldier.init("Resources/GemModel/Soldier1.gem", dx);
-
-	animatedModel am;
-	am.init("Resources/GemModel/TRex.gem", dx);
+	animatedModel trex;
+	trex.init("Resources/GemModel/TRex.gem", dx);
 
 	SkyDome sky;
 	sky.init(dx, 20, 20, 50.0f, "Textures/sunsetSky.png");
@@ -105,10 +102,9 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 	mathLib::Vec3 up(0, 1, 0);
 	mathLib::Matrix m;
 	auto p = m.perspectiveProjection(1.f, 60.0f * M_PI / 180.0f, 200.f, 0.1f);
-	Player player(mathLib::Vec3(0.0f, 1.0f, 0.0f), 5.0f, &soldier);
+	Player player(mathLib::Vec3(0.0f, 1.0f, 0.0f), 5.0f, &trex);
 	TPSCamera camera(&player, 5.0f);
 
-	am.calculateBoundingBox();
 	sampler sam;
 	sam.init(dx);
 
@@ -120,20 +116,18 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 		mathLib::Matrix cv = camera.getViewMatrix();
 		vp = cv * p;
 		// draw sky dome
+		sky.update(t);
 		sky.draw(dx, skyShader, textures, sam, camera.position, vp);
 
 		// world Matrix
 		mathLib::Matrix cubeWorld = planeWorld.translation(mathLib::Vec3(13.f, 0.f, 0.f));
-		mathLib::Matrix dinosaurWorld = planeWorld.rotateY(180);
-		mathLib::Matrix treeWorld = planeWorld.scaling(mathLib::Vec3(0.01f, 0.01f, 0.01f));
-		
+
 		cube.updateBoundingBox(cubeWorld);
 		cube.draw(dx, planeShader, cubeWorld, vp);
 		pl.draw(dx, planeShader, textures, sam, planeWorld, vp);
 		grasses.draw(dx, textures, treeShader, sam, vp);
 		trees.draw(dx, textures, treeShader, sam, vp);
 		player.draw(dx, shader, textures, sam, vp);
-		//renderTree(t, tree, treeShader, treeWorld, vp, dx, textures, sam);
 		canvas.processMessages();
 		dx->present();
 	}

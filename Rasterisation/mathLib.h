@@ -194,6 +194,10 @@ namespace mathLib {
 			min(v1.z, v2.z));
 	}
 
+	static Vec3 interpolate(mathLib::Vec3 p1, mathLib::Vec3 p2, float t) {
+		return ((p1 * (1.0f - t)) + (p2 * t));
+	}
+
 	class Vec4 {
 	public:
 		union

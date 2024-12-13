@@ -9,9 +9,27 @@ public:
 	mathLib::Quaternion rotation; // 主角朝向（旋转）
 	animatedModel* model;
 	AABB boundingBox;
+	std::string currentAnimation;
+	bool isAttacking = false; // 是否正在播放攻击动画
+	float attackAnimationTime = 0.0f; // 当前攻击动画播放时间
+	float attackDuration = 1.0f; // 攻击动画的总持续时间
+
 
 	Player(const mathLib::Vec3& startPos, float moveSpeed, animatedModel* _model)
 		: position(startPos), velocity(0.0f, 0.0f, 0.0f), speed(moveSpeed), model(_model) {
+		rotation = mathLib::Quaternion::fromAxisAngle(mathLib::Vec3(1, 0, 0), M_PI);
+	}
+
+	void update(mathLib::Vec3 direction, mathLib::Vec3 forward, AABB& obstacle, float deltaTime) {
+		// 更新主角的动画状态
+		if (direction.getLengthSquare() > 0.0f) {
+			updateRotation(direction); // 更新朝向
+			updateAnimation("Run", deltaTime); // 切换到运行动画
+			move(direction, deltaTime, obstacle);
+		}
+		else {
+			updateAnimation("Idle", deltaTime);    // 待机动画
+		}
 	}
 
 	// 更新主角位置
@@ -26,37 +44,68 @@ public:
 			newBoundingBox.min += (newPosition - position);
 			newBoundingBox.max += (newPosition - position);
 
-			// 检测碰撞
-			bool hasCollision = false;
-			if (newBoundingBox.intersects(obstacle))
-				hasCollision = true;
+			//// 检测碰撞
+			//bool hasCollision = false;
+			//if (newBoundingBox.intersects(obstacle))
+			//	hasCollision = true;
 
-			// 如果没有碰撞，更新位置
-			if (!hasCollision) {
+			//// 如果没有碰撞，更新位置
+			//if (!hasCollision) {
+			//	position = newPosition;
+			//	updateBoundingBox();
+			//}
+
+					// 检测碰撞
+			if (newBoundingBox.intersects(obstacle)) {
+				// 计算碰撞法线
+				mathLib::Vec3 collisionNormal = calculateCollisionNormal(obstacle);
+
+				// 调整速度方向（滑动方向）
+				velocity = velocity - collisionNormal * velocity.dot(collisionNormal);
+
+				// 更新位置
+				newPosition = position + velocity * deltaTime;
+
+				// 再次检查新位置的碰撞盒
+				newBoundingBox.min += (newPosition - position);
+				newBoundingBox.max += (newPosition - position);
+
+				// 确保新的位置不再与障碍物碰撞
+				if (!newBoundingBox.intersects(obstacle)) {
+					position = newPosition;
+					updateBoundingBox();
+				}
+			}
+			else {
+				// 如果没有碰撞，正常更新位置
 				position = newPosition;
 				updateBoundingBox();
 			}
-
 		}
-		// 更新朝向
-		rotation = mathLib::Quaternion::fromAxisAngle(mathLib::Vec3(0, 1, 0), atan2(direction.x, direction.z));
+	}
+
+	// 更新朝向
+	void updateRotation(mathLib::Vec3& moveDirection) {
+		if (moveDirection.getLengthSquare() > 0.0f) {
+			float angle = atan2(-moveDirection.x, -moveDirection.z);
+			rotation = mathLib::Quaternion::fromAxisAngle(mathLib::Vec3(0, 1, 0), angle);
+			rotation = rotation * mathLib::Quaternion::fromAxisAngle(mathLib::Vec3(1, 0, 0), M_PI); // 修正 X 轴翻转
+		}
 	}
 
 	// 更新主角模型的动画状态
 	void updateAnimation(const std::string& animationName, float deltaTime) {
-		if (model) {
+		//if (model) {
+		//	model->instance.update(animationName, deltaTime);
+		//}
+		if (model && currentAnimation != animationName) {
+			currentAnimation = animationName;
+			model->instance.update(animationName, deltaTime);
+		}
+		else if (model) {
 			model->instance.update(animationName, deltaTime);
 		}
 	}
-
-	//// 更新主角模型的碰撞盒位置
-	//void updateBoundingBox() {
-	//	if (model) {
-	//		boundingBox = model->bounds; // 获取模型的包围盒
-	//		model->bounds.min += position; // 平移包围盒
-	//		model->bounds.max += position;
-	//	}
-	//}
 
 	void updateBoundingBox() {
 		// 获取模型的原始碰撞盒
@@ -79,10 +128,10 @@ public:
 		mathLib::Vec3 transformedMin(FLT_MAX, FLT_MAX, FLT_MAX);
 		mathLib::Vec3 transformedMax(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
-		mathLib::Matrix scaling = mathLib::Matrix::scaling(mathLib::Vec3(0.01f, 0.01f, 0.01f));
+		mathLib::Matrix scaling = mathLib::Matrix::scaling(mathLib::Vec3(0.3f, 0.3f, 0.3f));
 		mathLib::Matrix translation = mathLib::Matrix::translation(position);
-		mathLib::Matrix rotationMatrix = rotation.toMatrix().rotateY(180);
-		mathLib::Matrix worldMatrix = rotationMatrix * scaling * translation;
+		mathLib::Matrix rotationMatrix = rotation.toMatrix();
+		mathLib::Matrix worldMatrix = scaling * rotationMatrix * translation;
 
 		// 变换每个顶点，并更新 AABB
 		for (auto& corner : corners) {
@@ -106,10 +155,10 @@ public:
 	void draw(DxCore* core, Shader* shader, textureManager textures, sampler sam, mathLib::Matrix& vp) {
 		if (model) {
 			// 计算世界矩阵，包含缩放,平移和旋转
-			mathLib::Matrix scaling = mathLib::Matrix::scaling(mathLib::Vec3(0.01f, 0.01f, 0.01f));
+			mathLib::Matrix scaling = mathLib::Matrix::scaling(mathLib::Vec3(0.3f, 0.3f, 0.3f));
 			mathLib::Matrix translation = mathLib::Matrix::translation(position);
-			mathLib::Matrix rotationMatrix = rotation.toMatrix().rotateY(180);
-			mathLib::Matrix worldMatrix = rotationMatrix * scaling * translation;
+			mathLib::Matrix rotationMatrix = rotation.toMatrix();
+			mathLib::Matrix worldMatrix = scaling * rotationMatrix * translation;
 
 			model->draw(core, shader, textures, sam, worldMatrix, vp);
 		}
@@ -118,5 +167,27 @@ public:
 	// 与地形或物体碰撞检测（简化为地面高度）
 	void stayOnGround(float groundHeight) {
 		position.y = groundHeight;
+	}
+
+	// 计算碰撞法线（针对 AABB）
+	mathLib::Vec3 calculateCollisionNormal(AABB& obstacle) {
+		// 假设玩家的 AABB 边界与障碍物重叠，计算最近的接触面法线
+		mathLib::Vec3 normal;
+
+		float dx1 = obstacle.max.x - boundingBox.min.x;
+		float dx2 = boundingBox.max.x - obstacle.min.x;
+		float dy1 = obstacle.max.y - boundingBox.min.y;
+		float dy2 = boundingBox.max.y - obstacle.min.y;
+		float dz1 = obstacle.max.z - boundingBox.min.z;
+		float dz2 = boundingBox.max.z - obstacle.min.z;
+
+		float minDist = min(min(dx1, dx2), min(dy1, dy2), min(dz1, dz2));
+		if (minDist == dx1) normal = mathLib::Vec3(-1, 0, 0); // 碰撞在左侧
+		else if (minDist == dx2) normal = mathLib::Vec3(1, 0, 0); // 碰撞在右侧
+		else if (minDist == dy1) normal = mathLib::Vec3(0, -1, 0); // 碰撞在底部
+		else if (minDist == dy2) normal = mathLib::Vec3(0, 1, 0); // 碰撞在顶部
+		else if (minDist == dz1) normal = mathLib::Vec3(0, 0, -1); // 碰撞在前方
+		else if (minDist == dz2) normal = mathLib::Vec3(0, 0, 1); // 碰撞在后方
+		return normal;
 	}
 };

@@ -550,6 +550,8 @@ class SkyDome {
 private:
 	Mesh domeMesh;                // 穹顶的网格
 	std::string textureFilename;  // 穹顶纹理文件名
+	mathLib::Matrix worldMatrix; // SkyDome 的世界矩阵
+	float rotationSpeed;       // 旋转速度
 
 public:
 	// 初始化 Sky Dome
@@ -592,17 +594,24 @@ public:
 			}
 		}
 
+		rotationSpeed = 0.01f;
 		// 初始化网格
 		domeMesh.init(core, vertices, indices);
+	}
+
+	void update(float deltaTime) {
+		// 让 SkyDome 随时间旋转
+		worldMatrix = worldMatrix.rotateY(rotationSpeed * deltaTime);
 	}
 
 	// 绘制 Sky Dome
 	void draw(DxCore* core, Shader* shader, textureManager& textures, sampler& sam, const mathLib::Vec3& cameraPosition, mathLib::Matrix& vp) {
 		// 更新穹顶位置到相机中心
-		mathLib::Matrix worldMatrix = mathLib::Matrix::translation(cameraPosition);
+		mathLib::Matrix translation = mathLib::Matrix::translation(cameraPosition);
+		mathLib::Matrix finalMatrix = translation * worldMatrix;
 
 		// 更新着色器常量
-		shader->updateConstantVS("staticMeshBuffer", "W", &worldMatrix);
+		shader->updateConstantVS("staticMeshBuffer", "W", &finalMatrix);
 		shader->updateConstantVS("staticMeshBuffer", "VP", &vp);
 
 		// 绑定纹理并应用着色器
