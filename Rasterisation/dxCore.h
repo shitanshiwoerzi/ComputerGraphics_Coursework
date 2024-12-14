@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <d3d11.h>
 #include "adapter.h"
 
@@ -13,6 +13,10 @@ public:
 	ID3D11Texture2D* depthbuffer;
 	D3D11_VIEWPORT viewport;
 	ID3D11RasterizerState* rasterizerState;
+
+	ID3D11RenderTargetView* gBufferRTV[3];
+	ID3D11ShaderResourceView* gBufferSRV[3];
+
 	//ID3D11DepthStencilState* depthStencilState;
 	//ID3D11BlendState* blendState;
 
@@ -69,6 +73,8 @@ public:
 
 		device->CreateTexture2D(&dsvDesc, NULL, &depthbuffer);
 		device->CreateDepthStencilView(depthbuffer, NULL, &depthStencilView);
+
+		initGBuffer(width, height);
 		devicecontext->OMSetRenderTargets(1, &backbufferRenderTargetView, depthStencilView);
 
 		viewport.Width = (float)width;
@@ -80,6 +86,32 @@ public:
 		devicecontext->RSSetViewports(1, &viewport);
 
 		rasterizerConfig();
+	}
+
+	void geometryPass() {
+		// 设置G缓冲区为渲染目标
+		ID3D11RenderTargetView* rtvs[3] = { gBufferRTV[0], gBufferRTV[1], gBufferRTV[2] };
+		devicecontext->OMSetRenderTargets(3, rtvs, depthStencilView);
+
+		// 清除G缓冲区
+		float clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		for (int i = 0; i < 3; ++i) {
+			devicecontext->ClearRenderTargetView(gBufferRTV[i], clearColor);
+		}
+		// 再次清除深度缓冲区
+		devicecontext->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	}
+
+	void lightingPass() {
+		// 解绑 G-buffer 的渲染目标
+		ID3D11RenderTargetView* nullRTV[3] = { nullptr, nullptr, nullptr };
+		devicecontext->OMSetRenderTargets(3, nullRTV, nullptr);
+
+		// 设置后缓冲区为渲染目标
+		devicecontext->OMSetRenderTargets(1, &backbufferRenderTargetView, nullptr);
+
+		devicecontext->PSSetShaderResources(0, 3, gBufferSRV);
+		devicecontext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	}
 
 	void clear() {
@@ -105,6 +137,32 @@ private:
 		rsdesc.CullMode = D3D11_CULL_NONE;
 		device->CreateRasterizerState(&rsdesc, &rasterizerState);
 		devicecontext->RSSetState(rasterizerState);
+	}
+
+	void initGBuffer(unsigned int width, unsigned int height) {
+		DXGI_FORMAT formats[3] = {
+					DXGI_FORMAT_R32G32B32A32_FLOAT, // Position
+					DXGI_FORMAT_R32G32B32A32_FLOAT, // Normal
+					DXGI_FORMAT_R8G8B8A8_UNORM      // Albedo + Specular
+		};
+
+		for (int i = 0; i < 3; ++i) {
+			D3D11_TEXTURE2D_DESC texDesc = {};
+			texDesc.Width = width;
+			texDesc.Height = height;
+			texDesc.MipLevels = 1;
+			texDesc.ArraySize = 1;
+			texDesc.Format = formats[i];
+			texDesc.SampleDesc.Count = 1;
+			texDesc.Usage = D3D11_USAGE_DEFAULT;
+			texDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+			ID3D11Texture2D* texture = nullptr;
+			device->CreateTexture2D(&texDesc, nullptr, &texture);
+			device->CreateRenderTargetView(texture, nullptr, &gBufferRTV[i]);
+			device->CreateShaderResourceView(texture, nullptr, &gBufferSRV[i]);
+			texture->Release();
+		}
 	}
 
 	//void depth() {

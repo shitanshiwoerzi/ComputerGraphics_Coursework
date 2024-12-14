@@ -45,7 +45,7 @@ static STATIC_VERTEX addVertex(mathLib::Vec3 p, mathLib::Vec3 n, float tu, float
 	//Frame frame;
 	//frame.fromVector(n);
 	//v.tangent = frame.u; // For now
-	v.tangent = mathLib::Vec3(0, 0, 0);
+	v.tangent = mathLib::Vec3(1, 0, 0);
 	v.tu = tu;
 	v.tv = tv;
 	return v;
@@ -90,14 +90,6 @@ public:
 		devicecontext->IASetVertexBuffers(0, 1, &vertexBuffer, &strides, &offsets);
 		devicecontext->Draw(3, 0);
 	}
-
-	void updateConstantVS() {
-
-	}
-
-	void updateConstant() {
-
-	}
 };
 
 class Mesh {
@@ -140,12 +132,35 @@ public:
 	}
 
 
-	void draw(ID3D11DeviceContext* devicecontext) {
+	void draw(DxCore* core) {
 		UINT offsets = 0;
-		devicecontext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		devicecontext->IASetVertexBuffers(0, 1, &vertexBuffer, &strides, &offsets);
-		devicecontext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-		devicecontext->DrawIndexed(indicesSize, 0, 0);
+		core->devicecontext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		core->devicecontext->IASetVertexBuffers(0, 1, &vertexBuffer, &strides, &offsets);
+		core->devicecontext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+		core->devicecontext->DrawIndexed(indicesSize, 0, 0);
+	}
+};
+
+class fullSquare {
+public:
+	Mesh mesh;
+
+	void init(DxCore* core) {
+		std::vector<STATIC_VERTEX> vertices;
+		vertices.push_back(addVertex(mathLib::Vec3(-1.0f, 1.0f, 0.0f), mathLib::Vec3(0.0f, 0.0f, 1.0f), 0.0f, 0.0f));
+		vertices.push_back(addVertex(mathLib::Vec3(1.0f, 1.0f, 0.0f), mathLib::Vec3(0.0f, 0.0f, 1.0f), 1.0f, 0.0f));
+		vertices.push_back(addVertex(mathLib::Vec3(-1.0f, -1.0f, 0.0f), mathLib::Vec3(0.0f, 0.0f, 1.0f), 0.0f, 1.0f));
+		vertices.push_back(addVertex(mathLib::Vec3(1.0f, -1.0f, 0.0f), mathLib::Vec3(0.0f, 0.0f, 1.0f), 1.0f, 1.0f));
+
+		std::vector<unsigned int> indices;
+		indices.push_back(0); indices.push_back(1); indices.push_back(2);
+		indices.push_back(2); indices.push_back(1); indices.push_back(3);
+		mesh.init(core, vertices, indices);
+	}
+
+	// ask the GPU to draw a plane
+	void draw(DxCore* core) {
+		mesh.draw(core);
 	}
 };
 
@@ -154,27 +169,20 @@ public:
 	Mesh mesh;
 
 	void init(DxCore* core) {
-		//std::vector<STATIC_VERTEX> vertices;
-		//vertices.push_back(addVertex(mathLib::Vec3(-150.0f, 0, -150.0f), mathLib::Vec3(0, 1, 0), 0, 0));
-		//vertices.push_back(addVertex(mathLib::Vec3(150.0f, 0, -150.0f), mathLib::Vec3(0, 1, 0), 1, 0));
-		//vertices.push_back(addVertex(mathLib::Vec3(-150.0f, 0, 150.0f), mathLib::Vec3(0, 1, 0), 0, 1));
-		//vertices.push_back(addVertex(mathLib::Vec3(150.0f, 0, 150.0f), mathLib::Vec3(0, 1, 0), 1, 1));
-		//std::vector<unsigned int> indices;
-		//indices.push_back(2); indices.push_back(1); indices.push_back(0);
-		//indices.push_back(1); indices.push_back(2); indices.push_back(3);
 		std::vector<STATIC_VERTEX> vertices;
 		std::vector<unsigned int> indices;
 		int gridSize = 10;
-		float planeSize = 150.0f;
+		float planeSize = 100.0f;
 		float step = planeSize * 2.0f / gridSize;
 
+		float textureScale = 10.0f; // 控制纹理重复的比例
 		// 生成顶点
 		for (int z = 0; z <= gridSize; ++z) {
 			for (int x = 0; x <= gridSize; ++x) {
 				float posX = -planeSize + x * step;
 				float posZ = -planeSize + z * step;
-				float u = static_cast<float>(x) / gridSize;
-				float v = static_cast<float>(z) / gridSize;
+				float u = static_cast<float>(x) / gridSize * textureScale;
+				float v = static_cast<float>(z) / gridSize * textureScale;
 				vertices.push_back(addVertex(mathLib::Vec3(posX, 0.0f, posZ), mathLib::Vec3(0, 1, 0), u, v));
 			}
 		}
@@ -205,8 +213,8 @@ public:
 		shader->updateConstantVS("staticMeshBuffer", "VP", &vp);
 		shader->apply(core);
 		shader->updateTexturePS(core, "tex", textures.find("Textures/grass.png"), sam.state);
-		//shader->updateTexturePS(core, "normalMap", textures.find("Textures/grass_normal.png"), sam.state);
-		mesh.draw(core->devicecontext);
+		shader->updateTexturePS(core, "normalMap", textures.find("Textures/grass_Normal.png"), sam.state);
+		mesh.draw(core);
 	}
 };
 
@@ -215,16 +223,17 @@ public:
 	Mesh mesh;
 	AABB boundingBox;
 	std::vector<STATIC_VERTEX> vertices;
+	mathLib::Matrix worldMatrix;
 
 	void init(DxCore* core) {
-		mathLib::Vec3 p0 = mathLib::Vec3(-1.5f, -1.5f, -1.5f);
-		mathLib::Vec3 p1 = mathLib::Vec3(1.5f, -1.5f, -1.5f);
-		mathLib::Vec3 p2 = mathLib::Vec3(1.5f, 1.5f, -1.5f);
-		mathLib::Vec3 p3 = mathLib::Vec3(-1.5f, 1.5f, -1.5f);
-		mathLib::Vec3 p4 = mathLib::Vec3(-1.5f, -1.5f, 1.5f);
-		mathLib::Vec3 p5 = mathLib::Vec3(1.5f, -1.5f, 1.5f);
-		mathLib::Vec3 p6 = mathLib::Vec3(1.5f, 1.5f, 1.5f);
-		mathLib::Vec3 p7 = mathLib::Vec3(-1.5f, 1.5f, 1.5f);
+		mathLib::Vec3 p0 = mathLib::Vec3(-1.0f, -1.0f, -1.0f);
+		mathLib::Vec3 p1 = mathLib::Vec3(1.0f, -1.0f, -1.0f);
+		mathLib::Vec3 p2 = mathLib::Vec3(1.0f, 1.0f, -1.0f);
+		mathLib::Vec3 p3 = mathLib::Vec3(-1.0f, 1.0f, -1.0f);
+		mathLib::Vec3 p4 = mathLib::Vec3(-1.0f, -1.0f, 1.0f);
+		mathLib::Vec3 p5 = mathLib::Vec3(1.0f, -1.0f, 1.0f);
+		mathLib::Vec3 p6 = mathLib::Vec3(1.0f, 1.0f, 1.0f);
+		mathLib::Vec3 p7 = mathLib::Vec3(-1.0f, 1.0f, 1.0f);
 
 		vertices.push_back(addVertex(p0, mathLib::Vec3(0.0f, 0.0f, -1.0f), 0.0f, 1.0f));
 		vertices.push_back(addVertex(p1, mathLib::Vec3(0.0f, 0.0f, -1.0f), 1.0f, 1.0f));
@@ -287,12 +296,59 @@ public:
 	}
 
 	// ask the GPU to draw a cube
-	void draw(DxCore* core, Shader* shader, mathLib::Matrix& worldMatrix, mathLib::Matrix& vp) {
+	void draw(DxCore* core, Shader* shader, textureManager textures, sampler sam, mathLib::Matrix& worldMatrix, mathLib::Matrix& vp) {
 		shader->updateConstantVS("staticMeshBuffer", "W", &worldMatrix);
 		shader->updateConstantVS("staticMeshBuffer", "VP", &vp);
 		shader->apply(core);
-		mesh.draw(core->devicecontext);
+		shader->updateTexturePS(core, "tex", textures.find("Textures/Bricks097_1K-PNG_Color.png"), sam.state);
+		shader->updateTexturePS(core, "normalMap", textures.find("Textures/Bricks097_1K-PNG_NormalDX.png"), sam.state);
+		mesh.draw(core);
 	}
+};
+
+class Pool {
+public:
+	std::vector<cube> cubes; // 保存所有的立方体
+	mathLib::Vec3 poolSize;  // 游泳池尺寸（宽度、深度、长度）
+	float cubeSize;          // 单个立方体的边长
+
+	void init(DxCore* core, mathLib::Vec3 size, float cubeSize) {
+		this->poolSize = size;
+		this->cubeSize = cubeSize;
+
+		// 生成四面墙
+		generateWall(core, mathLib::Vec3(-poolSize.x / 2.0f, 1.0f, -poolSize.x / 2.0f), true);  // 左墙
+		generateWall(core, mathLib::Vec3(poolSize.x / 2.0f, 1.0f, -poolSize.x / 2.0f), true);   // 右墙
+		generateWall(core, mathLib::Vec3(-poolSize.x / 2.0f, 1.0f, poolSize.z / 2.0f), false); // 前墙
+		generateWall(core, mathLib::Vec3(-poolSize.x / 2.0f, 1.0f, -poolSize.z / 2.0f), false);  // 后墙
+	}
+
+	void draw(DxCore* core, Shader* shader, textureManager textures, sampler sam, mathLib::Matrix& vp) {
+		for (auto& c : cubes) {
+			c.draw(core, shader, textures, sam, c.worldMatrix, vp);
+		}
+	}
+
+private:
+	// 生成垂直墙壁
+	void generateWall(DxCore* core, mathLib::Vec3 startPos, bool verticalWall) {
+		int numCubes = static_cast<int>(verticalWall ? poolSize.z : poolSize.x);
+
+		for (int i = 0; i < numCubes; ++i) {
+			cube c;
+			c.init(core);
+
+			mathLib::Vec3 offset = verticalWall
+				? mathLib::Vec3(0.0f, 0.0f, i * cubeSize)  // 垂直方向的墙
+				: mathLib::Vec3(i * cubeSize, 0.0f, 0.0f); // 水平方向的墙
+
+			mathLib::Matrix translation = mathLib::Matrix::translation(startPos + offset);
+			c.updateBoundingBox(translation);
+			c.worldMatrix = translation;
+			cubes.push_back(c);
+		}
+	}
+
 };
 
 class sphere {
@@ -337,7 +393,7 @@ public:
 	}
 
 	void draw(DxCore* core) {
-		mesh.draw(core->devicecontext);
+		mesh.draw(core);
 	}
 
 	STATIC_VERTEX addVertex(mathLib::Vec3 p, mathLib::Vec3 n, float tu, float tv)
@@ -355,7 +411,58 @@ public:
 	}
 };
 
-class multCube {
+class river {
+public:
+	Mesh mesh;
+
+	void init(DxCore* core) {
+		std::vector<STATIC_VERTEX> vertices;
+		std::vector<unsigned int> indices;
+		int gridSize = 10;
+		float planeSize = 3.0f;
+		float step = planeSize * 2.0f / gridSize;
+
+		//float textureScale = 10.0f; // 控制纹理重复的比例
+		// 生成顶点
+		for (int z = 0; z <= gridSize; ++z) {
+			for (int x = 0; x <= gridSize; ++x) {
+				float posX = -planeSize + x * step;
+				float posZ = -planeSize + z * step;
+				float u = static_cast<float>(x) / gridSize;
+				float v = static_cast<float>(z) / gridSize;
+				vertices.push_back(addVertex(mathLib::Vec3(posX, 0.0f, posZ), mathLib::Vec3(0, 1, 0), u, v));
+			}
+		}
+
+		// 生成索引
+		for (int z = 0; z < gridSize; ++z) {
+			for (int x = 0; x < gridSize; ++x) {
+				int topLeft = z * (gridSize + 1) + x;
+				int topRight = topLeft + 1;
+				int bottomLeft = (z + 1) * (gridSize + 1) + x;
+				int bottomRight = bottomLeft + 1;
+
+				indices.push_back(topLeft);
+				indices.push_back(bottomLeft);
+				indices.push_back(topRight);
+
+				indices.push_back(topRight);
+				indices.push_back(bottomLeft);
+				indices.push_back(bottomRight);
+			}
+		}
+		mesh.init(core, vertices, indices);
+	}
+
+	// ask the GPU to draw a plane
+	void draw(DxCore* core, Shader* shader, textureManager textures, sampler sam, mathLib::Matrix worldMatrix, mathLib::Matrix vp) {
+		shader->updateConstantVS("staticMeshBuffer", "W", &worldMatrix);
+		shader->updateConstantVS("staticMeshBuffer", "VP", &vp);
+		shader->apply(core);
+		shader->updateTexturePS(core, "tex", textures.find("Textures/Water_002_COLOR.png"), sam.state);
+		shader->updateTexturePS(core, "normalMap", textures.find("Textures/Water_002_NORM.png"), sam.state);
+		mesh.draw(core);
+	}
 
 };
 
@@ -393,7 +500,7 @@ public:
 		{
 			shader->updateTexturePS(core, "tex", textures.find(textureFilenames[i]), sam.state);
 			shader->updateTexturePS(core, "normalMap", textures.find(textureNormalFilenames[i]), sam.state);
-			meshes[i].draw(core->devicecontext);
+			meshes[i].draw(core);
 		}
 	}
 };
@@ -540,9 +647,10 @@ public:
 		{
 			shader->updateTexturePS(core, "tex", textures.find(textureFilenames[i]), sam.state);
 			shader->updateTexturePS(core, "normalMap", textures.find(textureNormalFilenames[i]), sam.state);
-			meshes[i].draw(core->devicecontext);
+			meshes[i].draw(core);
 		}
 
+		//core->lightingPassInit();
 	}
 };
 
@@ -617,7 +725,7 @@ public:
 		// 绑定纹理并应用着色器
 		shader->apply(core);
 		shader->updateTexturePS(core, "tex", textures.find(textureFilename), sam.state);
-		domeMesh.draw(core->devicecontext);
+		domeMesh.draw(core);
 	}
 
 	// 卸载纹理

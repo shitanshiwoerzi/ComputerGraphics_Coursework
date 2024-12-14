@@ -87,25 +87,20 @@ public:
 		shader->Release();
 	}
 
-	//void updateConstantVS(std::string name, std::string constBuffferName, std::string variableName, void* data) {
-	//	for (int i = 0; i < vsConstantBuffers.size(); i++)
-	//	{
-	//		if (vsConstantBuffers[i].name == name)
-	//		{
-	//			vsConstantBuffers[i].update(variableName, data);
-	//		}
-	//	}
-	//}
-
-	//void updateConstantPS(std::string name, std::string constBuffferName, std::string variableName, void* data) {
-	//	for (int i = 0; i < psConstantBuffers.size(); i++)
-	//	{
-	//		if (psConstantBuffers[i].name == name)
-	//		{
-	//			psConstantBuffers[i].update(variableName, data);
-	//		}
-	//	}
-	//}
+	void loadLightPS(std::string& filename, DxCore* core) {
+		ID3DBlob* status;
+		ID3DBlob* shader;
+		std::string shaderHLSL = readFile(filename);
+		// compile pixel shader
+		HRESULT hr = D3DCompile(shaderHLSL.c_str(), strlen(shaderHLSL.c_str()), NULL, NULL, NULL, "PS", "ps_5_0", 0, 0, &shader, &status);
+		if (FAILED(hr)) {
+			MessageBoxA(NULL, (char*)status->GetBufferPointer(), "Pixel Shader Error", 0);
+			exit(0);
+		}
+		// create pixel shader
+		core->device->CreatePixelShader(shader->GetBufferPointer(), shader->GetBufferSize(), NULL, &pixelShader);
+		shader->Release();
+	}
 
 	void updateConstantVS(std::string constantBufferName, std::string variableName, void* data)
 	{
@@ -146,6 +141,10 @@ public:
 		for (int i = 0; i < psConstantBuffers.size(); i++) {
 			psConstantBuffers[i].upload(core);
 		}
+	}
+
+	void applyPS(DxCore* core) {
+		core->devicecontext->PSSetShader(pixelShader, NULL, 0);
 	}
 
 private:

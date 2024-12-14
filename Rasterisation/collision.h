@@ -32,65 +32,6 @@ public:
 	bool intersects(Ray& ray, float& tmin, float& tmax);
 };
 
-class OOBB
-{
-public:
-	mathLib::Vec3 center;       // 中心点
-	mathLib::Vec3 halfExtents;  // 各轴上的半尺寸
-	mathLib::Vec3 axes[3];      // OOBB 的三个局部坐标轴（需正交归一）
-
-	OOBB() {}
-
-	OOBB(mathLib::Vec3& _center, mathLib::Vec3& _halfExtents, mathLib::Vec3& _xAxis, mathLib::Vec3& _yAxis, mathLib::Vec3& _zAxis)
-		: center(_center), halfExtents(_halfExtents) {
-		axes[0] = _xAxis.normalize();
-		axes[1] = _yAxis.normalize();
-		axes[2] = _zAxis.normalize();
-	}
-
-	bool intersects(Ray& ray, float& tmin, float& tmax);
-
-	bool intersects(AABB& aabb) {
-		// Get the axes to test (OOBB axes + AABB axes)
-		mathLib::Vec3 testAxes[15];
-		std::copy(std::begin(axes), std::end(axes), testAxes);
-		testAxes[3] = mathLib::Vec3(1, 0, 0); // AABB's X-axis
-		testAxes[4] = mathLib::Vec3(0, 1, 0); // AABB's Y-axis
-		testAxes[5] = mathLib::Vec3(0, 0, 1); // AABB's Z-axis
-
-		int index = 6;
-		for (int i = 0; i < 3; ++i) {
-			for (int j = 3; j < 6; ++j) {
-				testAxes[index++] = cross(axes[i], testAxes[j]);
-			}
-		}
-
-		// Test all axes
-		for (int i = 0; i < 15; ++i) {
-			if (!overlapOnAxis(*this, aabb, testAxes[i])) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-private:
-	static bool overlapOnAxis(OOBB& oobb, AABB& aabb, mathLib::Vec3& axis) {
-		float oobbProjection = 0.0f;
-		for (int i = 0; i < 3; ++i) {
-			oobbProjection += oobb.halfExtents[i] * std::abs(dot(oobb.axes[i], axis));
-		}
-
-		float aabbProjection =
-			(aabb.max.x - aabb.min.x) * std::abs(dot(mathLib::Vec3(1, 0, 0), axis)) +
-			(aabb.max.y - aabb.min.y) * std::abs(dot(mathLib::Vec3(0, 1, 0), axis)) +
-			(aabb.max.z - aabb.min.z) * std::abs(dot(mathLib::Vec3(0, 0, 1), axis));
-
-		float centerDistance = std::abs(dot(oobb.center - (aabb.min + aabb.max) * 0.5f, axis));
-		return centerDistance <= (oobbProjection + aabbProjection);
-	}
-};
-
 class Sphere
 {
 public:
@@ -259,34 +200,6 @@ bool AABB::intersects(Ray& ray, float& tmin, float& tmax) {
 		tmax = min(tmax, t2);
 
 		if (tmin > tmax) return false;
-	}
-	return true;
-}
-
-bool OOBB::intersects(Ray& ray, float& tmin, float& tmax) {
-	tmin = 0.0f;
-	tmax = FLT_MAX;
-
-	mathLib::Vec3 p = center - ray.o;
-
-	for (int i = 0; i < 3; ++i) {
-		float e = dot(p, axes[i]);
-		float f = dot(ray.dir, axes[i]);
-
-		if (std::abs(f) > 0.0001f) {
-			float t1 = (e - halfExtents[i]) / f;
-			float t2 = (e + halfExtents[i]) / f;
-
-			if (t1 > t2) std::swap(t1, t2);
-
-			tmin = max(tmin, t1);
-			tmax = min(tmax, t2);
-
-			if (tmin > tmax) return false;
-		}
-		else if (-e - halfExtents[i] > 0.0f || -e + halfExtents[i] < 0.0f) {
-			return false;
-		}
 	}
 	return true;
 }

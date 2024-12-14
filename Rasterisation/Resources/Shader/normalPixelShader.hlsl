@@ -31,10 +31,12 @@ float4 PS(PS_INPUT input) : SV_Target0
     float lightIntensity = 2;
     float3 lightDir = normalize(float3(0.0, 1.0, 0.5)); // Light direction
     float diffuse = max(dot(worldNormal, lightDir), 0.0) * lightIntensity;
+    //float diffuse = max(dot(input.Normal, lightDir), 0.0);
     if (colour.a < 0.5)
     {
         discard;
     }
     // Output the final color
     return float4(colour.rgb * diffuse + ambient, colour.a);
+    //return float4(dotValue, dotValue, dotValue, 1.0);
 }
