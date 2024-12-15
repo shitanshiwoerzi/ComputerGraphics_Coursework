@@ -21,6 +21,7 @@ struct PS_INPUT
 	float3 Normal : NORMAL;
 	float3 Tangent : TANGENT;
 	float2 TexCoords : TEXCOORD;
+    float3 WorldPos : TEXCOORD1;
 };
 
 PS_INPUT VS(VS_INPUT input)
@@ -32,6 +33,7 @@ PS_INPUT VS(VS_INPUT input)
 	transform += bones[input.BoneIDs[3]] * input.BoneWeights[3];
 	output.Pos = mul(input.Pos, transform);
 	output.Pos = mul(output.Pos, W);
+    output.WorldPos = output.Pos.xyz;
 	output.Pos = mul(output.Pos, VP);
 	output.Normal = mul(input.Normal, (float3x3)transform);
 	output.Normal = mul(output.Normal, (float3x3)W);

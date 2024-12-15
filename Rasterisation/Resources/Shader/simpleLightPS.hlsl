@@ -15,5 +15,5 @@ float4 PS(float2 texCoords : TEXCOORD) : SV_Target
     float diff = max(dot(normal, lightDir), 0.0);
     float3 diffuse = diff * lightColor * albedo;
 
-    return float4(diffuse, 1.0);
+    return float4(position, 1.0);
 }

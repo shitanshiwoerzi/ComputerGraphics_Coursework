@@ -143,7 +143,9 @@ public:
 		}
 	}
 
-	void applyPS(DxCore* core) {
+	void applyLight(DxCore* core) {
+		core->devicecontext->IASetInputLayout(NULL);
+		core->devicecontext->VSSetShader(vertexShader, NULL, 0);
 		core->devicecontext->PSSetShader(pixelShader, NULL, 0);
 	}
 

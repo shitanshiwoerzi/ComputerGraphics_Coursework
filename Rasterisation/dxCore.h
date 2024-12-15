@@ -17,7 +17,8 @@ public:
 	ID3D11RenderTargetView* gBufferRTV[3];
 	ID3D11ShaderResourceView* gBufferSRV[3];
 
-	//ID3D11DepthStencilState* depthStencilState;
+	ID3D11DepthStencilState* noDepthWriteState;
+	ID3D11DepthStencilState* defaultDepthState;
 	//ID3D11BlendState* blendState;
 
 	void Init(unsigned int width, unsigned int height, HWND hwnd, bool window_fullscreen = false) {
@@ -111,7 +112,9 @@ public:
 		devicecontext->OMSetRenderTargets(1, &backbufferRenderTargetView, nullptr);
 
 		devicecontext->PSSetShaderResources(0, 3, gBufferSRV);
+
 		devicecontext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+		devicecontext->Draw(3, 0);
 	}
 
 	void clear() {
@@ -164,11 +167,6 @@ private:
 			texture->Release();
 		}
 	}
-
-	//void depth() {
-	//	device->CreateDepthStencilState(&depthStencilState, &depthState);
-	//	devicecontext->OMSetDepthStencilState(depthStencilState, 0);
-	//}
 
 	//void blend() {
 	//	device->CreateBlendState(&blendDesc, &blendState);
