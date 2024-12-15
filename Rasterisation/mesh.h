@@ -141,29 +141,6 @@ public:
 	}
 };
 
-class fullSquare {
-public:
-	Mesh mesh;
-
-	void init(DxCore* core) {
-		std::vector<STATIC_VERTEX> vertices;
-		vertices.push_back(addVertex(mathLib::Vec3(-1.0f, 1.0f, 0.0f), mathLib::Vec3(0.0f, 0.0f, 1.0f), 0.0f, 0.0f));
-		vertices.push_back(addVertex(mathLib::Vec3(1.0f, 1.0f, 0.0f), mathLib::Vec3(0.0f, 0.0f, 1.0f), 1.0f, 0.0f));
-		vertices.push_back(addVertex(mathLib::Vec3(-1.0f, -1.0f, 0.0f), mathLib::Vec3(0.0f, 0.0f, 1.0f), 0.0f, 1.0f));
-		vertices.push_back(addVertex(mathLib::Vec3(1.0f, -1.0f, 0.0f), mathLib::Vec3(0.0f, 0.0f, 1.0f), 1.0f, 1.0f));
-
-		std::vector<unsigned int> indices;
-		indices.push_back(0); indices.push_back(1); indices.push_back(2);
-		indices.push_back(2); indices.push_back(1); indices.push_back(3);
-		mesh.init(core, vertices, indices);
-	}
-
-	// ask the GPU to draw a plane
-	void draw(DxCore* core) {
-		mesh.draw(core);
-	}
-};
-
 class plane {
 public:
 	Mesh mesh;
@@ -175,8 +152,8 @@ public:
 		float planeSize = 100.0f;
 		float step = planeSize * 2.0f / gridSize;
 
-		float textureScale = 10.0f; // 控制纹理重复的比例
-		// 生成顶点
+		float textureScale = 10.0f; // Control the proportion of texture repeats
+		// Generate Vertices
 		for (int z = 0; z <= gridSize; ++z) {
 			for (int x = 0; x <= gridSize; ++x) {
 				float posX = -planeSize + x * step;
@@ -187,7 +164,7 @@ public:
 			}
 		}
 
-		// 生成索引
+		// Generate indices
 		for (int z = 0; z < gridSize; ++z) {
 			for (int x = 0; x < gridSize; ++x) {
 				int topLeft = z * (gridSize + 1) + x;
@@ -308,19 +285,19 @@ public:
 
 class Pool {
 public:
-	std::vector<cube> cubes; // 保存所有的立方体
-	mathLib::Vec3 poolSize;  // 游泳池尺寸（宽度、深度、长度）
-	float cubeSize;          // 单个立方体的边长
+	std::vector<cube> cubes; // cubes
+	mathLib::Vec3 poolSize;  // pool size
+	float cubeSize;          // single cube size
 
 	void init(DxCore* core, mathLib::Vec3 size, float cubeSize) {
 		this->poolSize = size;
 		this->cubeSize = cubeSize;
 
-		// 生成四面墙
-		generateWall(core, mathLib::Vec3(-poolSize.x / 2.0f, 1.0f, -poolSize.x / 2.0f), true);  // 左墙
-		generateWall(core, mathLib::Vec3(poolSize.x / 2.0f, 1.0f, -poolSize.x / 2.0f), true);   // 右墙
-		generateWall(core, mathLib::Vec3(-poolSize.x / 2.0f, 1.0f, poolSize.z / 2.0f), false); // 前墙
-		generateWall(core, mathLib::Vec3(-poolSize.x / 2.0f, 1.0f, -poolSize.z / 2.0f), false);  // 后墙
+		// generate four sides
+		generateWall(core, mathLib::Vec3(-poolSize.x / 2.0f, 1.0f, -poolSize.x / 2.0f), true);  // left
+		generateWall(core, mathLib::Vec3(poolSize.x / 2.0f, 1.0f, -poolSize.x / 2.0f), true);   // right
+		generateWall(core, mathLib::Vec3(-poolSize.x / 2.0f, 1.0f, poolSize.z / 2.0f), false); // front
+		generateWall(core, mathLib::Vec3(-poolSize.x / 2.0f, 1.0f, -poolSize.z / 2.0f), false);  // backward
 	}
 
 	void draw(DxCore* core, Shader* shader, textureManager textures, sampler sam, mathLib::Matrix& vp) {
@@ -330,7 +307,6 @@ public:
 	}
 
 private:
-	// 生成垂直墙壁
 	void generateWall(DxCore* core, mathLib::Vec3 startPos, bool verticalWall) {
 		int numCubes = static_cast<int>(verticalWall ? poolSize.z : poolSize.x);
 
@@ -339,8 +315,8 @@ private:
 			c.init(core);
 
 			mathLib::Vec3 offset = verticalWall
-				? mathLib::Vec3(0.0f, 0.0f, i * cubeSize)  // 垂直方向的墙
-				: mathLib::Vec3(i * cubeSize, 0.0f, 0.0f); // 水平方向的墙
+				? mathLib::Vec3(0.0f, 0.0f, i * cubeSize)  // vertical
+				: mathLib::Vec3(i * cubeSize, 0.0f, 0.0f); // horizontal
 
 			mathLib::Matrix translation = mathLib::Matrix::translation(startPos + offset);
 			c.updateBoundingBox(translation);
@@ -422,8 +398,6 @@ public:
 		float planeSize = 3.0f;
 		float step = planeSize * 2.0f / gridSize;
 
-		//float textureScale = 10.0f; // 控制纹理重复的比例
-		// 生成顶点
 		for (int z = 0; z <= gridSize; ++z) {
 			for (int x = 0; x <= gridSize; ++x) {
 				float posX = -planeSize + x * step;
@@ -434,7 +408,6 @@ public:
 			}
 		}
 
-		// 生成索引
 		for (int z = 0; z < gridSize; ++z) {
 			for (int x = 0; x < gridSize; ++x) {
 				int topLeft = z * (gridSize + 1) + x;
@@ -507,20 +480,20 @@ public:
 
 class forest {
 public:
-	std::vector<mathLib::Matrix> transforms; // 每棵树的变换矩阵
-	model tree; // 单个树的模型
+	std::vector<mathLib::Matrix> transforms; // Transformation matrix for each tree
+	model tree; // single tree
 
 	void init(const std::string& modelFilename, DxCore* dx, int treeCount) {
 		tree.init(modelFilename, dx);
 
-		// 随机生成树的变换
+		// Randomized Spanning Tree Transformations
 		for (int i = 0; i < treeCount; ++i) {
-			float x = randFloat(-50.0f, 50.0f); // 随机 X 坐标
-			float z = randFloat(-50.0f, 50.0f); // 随机 Z 坐标
-			float y = 0.0f;                     // 树固定在地面上
+			float x = randFloat(-50.0f, 50.0f); // random x
+			float z = randFloat(-50.0f, 50.0f); // random z
+			float y = 0.0f;                     // fixed y
 
-			float scale = randFloat(0.01f, 0.03f); // 随机缩放比例
-			float rotation = randFloat(0.0f, 360.0f); // 随机旋转角度
+			float scale = randFloat(0.01f, 0.03f); // random scaling
+			float rotation = randFloat(0.0f, 360.0f); // random rotation
 
 			mathLib::Matrix worldMatrix =
 				mathLib::Matrix::scaling(mathLib::Vec3(scale, scale, scale)) *
@@ -656,17 +629,16 @@ public:
 
 class SkyDome {
 private:
-	Mesh domeMesh;                // 穹顶的网格
-	std::string textureFilename;  // 穹顶纹理文件名
-	mathLib::Matrix worldMatrix; // SkyDome 的世界矩阵
-	float rotationSpeed;       // 旋转速度
+	Mesh domeMesh; // mesh
+	std::string textureFilename;  // texture of sky dome
+	mathLib::Matrix worldMatrix; // worldMatrix of sky dome
+	float rotationSpeed;  // rotation speed of sky dome
 
 public:
-	// 初始化 Sky Dome
 	void init(DxCore* core, int rings, int segments, float radius, const std::string& textureFile) {
 		textureFilename = textureFile;
 
-		// 创建球体网格
+		// create vertices
 		std::vector<STATIC_VERTEX> vertices;
 		for (int lat = 0; lat <= rings; ++lat) {
 			float theta = lat * M_PI / rings;
@@ -678,16 +650,16 @@ public:
 				float sinPhi = sinf(phi);
 				float cosPhi = cosf(phi);
 
-				// 计算顶点位置和纹理坐标
+				// compute position and textcoords
 				mathLib::Vec3 position = mathLib::Vec3(radius * sinTheta * cosPhi, radius * cosTheta, radius * sinTheta * sinPhi);
 				mathLib::Vec3 normal = position.normalize();
-				float tu = 1.0f - (float)lon / segments;  // 纹理U坐标
-				float tv = (float)lat / rings;     // 纹理V坐标
+				float tu = 1.0f - (float)lon / segments;  // texcoord u
+				float tv = (float)lat / rings;     // texcoord v
 				vertices.push_back(addVertex(position, normal, tu, tv));
 			}
 		}
 
-		// 创建索引缓冲区
+		// create indices
 		std::vector<unsigned int> indices;
 		for (int lat = 0; lat < rings; ++lat) {
 			for (int lon = 0; lon < segments; ++lon) {
@@ -703,32 +675,30 @@ public:
 		}
 
 		rotationSpeed = 0.01f;
-		// 初始化网格
 		domeMesh.init(core, vertices, indices);
 	}
 
 	void update(float deltaTime) {
-		// 让 SkyDome 随时间旋转
+		// rotate with time
 		worldMatrix = worldMatrix.rotateY(rotationSpeed * deltaTime);
 	}
 
-	// 绘制 Sky Dome
+	// draw Sky Dome
 	void draw(DxCore* core, Shader* shader, textureManager& textures, sampler& sam, const mathLib::Vec3& cameraPosition, mathLib::Matrix& vp) {
-		// 更新穹顶位置到相机中心
+		// update to camera center
 		mathLib::Matrix translation = mathLib::Matrix::translation(cameraPosition);
 		mathLib::Matrix finalMatrix = translation * worldMatrix;
 
-		// 更新着色器常量
+		// update view matrix
 		shader->updateConstantVS("staticMeshBuffer", "W", &finalMatrix);
 		shader->updateConstantVS("staticMeshBuffer", "VP", &vp);
 
-		// 绑定纹理并应用着色器
+		// bind textures and apply shader
 		shader->apply(core);
 		shader->updateTexturePS(core, "tex", textures.find(textureFilename), sam.state);
 		domeMesh.draw(core);
 	}
 
-	// 卸载纹理
 	void unload(textureManager& textures) {
 		textures.unload(textureFilename);
 	}

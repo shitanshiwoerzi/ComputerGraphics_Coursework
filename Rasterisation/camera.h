@@ -88,14 +88,14 @@
 
 class TPSCamera {
 public:
-	Player* player;           // 绑定的主角
-	mathLib::Vec3 position;   // 相机位置
-	mathLib::Vec3 target;     // 相机目标点
-	mathLib::Vec3 up;         // 相机的上方向
+	Player* player;
+	mathLib::Vec3 position;   // camera position
+	mathLib::Vec3 target;     // camera targer
+	mathLib::Vec3 up;         // camera up vector
 
-	float distance;           // 相机到主角的距离
-	float yaw;                // Yaw angle (水平旋转)
-	float pitch;              // Pitch angle (垂直旋转)
+	float distance;           // distance from camera to player
+	float yaw;                // Yaw angle (horizontal rotation)
+	float pitch;              // Pitch angle(vertical rotation)
 	float mouseSensitivity;
 
 	// Constructor
@@ -105,23 +105,23 @@ public:
 		updateCameraPosition();
 	}
 
-	// 更新相机位置
+	// update
 	void updateCameraPosition() {
-		// 计算相机位置基于主角位置和偏移
+		// Calculate camera position based on player position and offset
 		float offsetX = cosf(radians(yaw)) * cosf(radians(pitch)) * distance;
 		float offsetY = sinf(radians(pitch)) * distance;
 		float offsetZ = sinf(radians(yaw)) * cosf(radians(pitch)) * distance;
 
 		position = player->position - mathLib::Vec3(offsetX, offsetY, offsetZ);
-		target = player->position; // 相机目标点始终是主角
+		target = player->position; // camera target point is always the player
 
-		// 确保相机在平面以上
-		if (position.y < player->position.y + 1.0f) { // 1.0f 是相机与地面的最小高度
+		// make sure the camera is above the plane
+		if (position.y < player->position.y + 1.0f) { // 1.0f is the minimum height of the camera from the ground
 			position.y = player->position.y + 1.0f;
 		}
 	}
 
-	// 处理鼠标输入
+	// mouse movement process
 	void processMouse(Window& canvas) {
 		float deltaX, deltaY;
 		canvas.getMouseMovement(deltaX, deltaY);
@@ -132,14 +132,14 @@ public:
 		yaw += deltaX;
 		pitch += deltaY;
 
-		// 限制 pitch 的范围
-		if (pitch > -5.0f) pitch = -5.0f;
-		if (pitch < -89.0f) pitch = -89.0f; // 限制为 -30 度，防止相机看向地面
+		// constrain
+		if (pitch > -5.0f) pitch = -5.0f; 
+		if (pitch < -89.0f) pitch = -89.0f; // prevent the camera from looking at the ground
 
 		updateCameraPosition();
 	}
 
-	// 获取 View Matrix
+	// get View Matrix
 	mathLib::Matrix getViewMatrix() {
 		return mathLib::lookAt(position, target, up);
 	}
@@ -151,25 +151,25 @@ private:
 };
 
 static float getGroundHeight(const mathLib::Vec3& position) {
-	return 0.0f; // 地面高度恒定为 0
+	return 0.0f;
 }
 
 static void handleInput(Player& player, TPSCamera& camera, Window& canvas, float deltaTime, AABB& obstacle) {
-	// 主角的前向和右向（由相机计算）
+	// Forward and right direction of the player
 	mathLib::Vec3 forward = camera.target - camera.position;
-	forward.y = 0; // 忽略垂直方向
+	forward.y = 0;
 	forward = forward.normalize();
 
 	mathLib::Vec3 right = mathLib::Vec3(0.0f, 1.0f, 0.0f).cross(forward).normalize();
 
-	// 攻击逻辑
+	// attack logic
 	if (canvas.keys['J'] && !player.isAttacking) {
 		player.isAttacking = true;
-		player.attackAnimationTime = 0.0f; // 重置攻击动画时间
-		player.updateAnimation("attack", deltaTime); // 切换到攻击动画
+		player.attackAnimationTime = 0.0f; // reset animation time
+		player.updateAnimation("attack", deltaTime); // switch to attack animation
 	}
 
-	// 移动主角
+	// player move
 	if (!player.isAttacking) {
 		mathLib::Vec3 moveDirection(0.0f, 0.0f, 0.0f);
 		if (canvas.keys['W'])
@@ -190,50 +190,19 @@ static void handleInput(Player& player, TPSCamera& camera, Window& canvas, float
 	else {
 		player.attackAnimationTime += deltaTime;
 
-		// 检查攻击动画是否播放完毕
+		// check if the attack animation has finished playing
 		if (player.attackAnimationTime >= player.attackDuration) {
-			player.isAttacking = false; // 动画结束
-			player.updateAnimation("Idle", deltaTime); // 切换到待机动画
+			player.isAttacking = false; // animation done
+			player.updateAnimation("Idle", deltaTime); // Switch to idle animation
 		}
 		else {
-			player.updateAnimation("attack", deltaTime); // 持续播放攻击动画
+			player.updateAnimation("attack", deltaTime); // play attack animation
 		}
 	}
 
-
-	// 处理相机鼠标输入
 	camera.processMouse(canvas);
 
-	// 更新主角位置（贴地行走）
+	// constrain player's position
 	float groundHeight = getGroundHeight(player.position);
 	player.stayOnGround(groundHeight);
 }
-
-//static void handleInput(Player& player, FPSCamera& camera, Window& canvas, float deltaTime) {
-//	// 主角的前向和右向
-//	mathLib::Vec3 forward = camera.front;
-//	mathLib::Vec3 right = camera.right;
-//
-//	mathLib::Vec3 moveDirection(0.0f, 0.0f, 0.0f);
-//	if (canvas.keys['W']) 
-//		moveDirection += forward;
-//	if (canvas.keys['S']) 
-//		moveDirection -= forward;
-//	if (canvas.keys['A']) 
-//		moveDirection += right;
-//	if (canvas.keys['D']) 
-//		moveDirection -= right;
-//
-//	// 移动主角
-//	if (!(moveDirection.x == 0 && moveDirection.y == 0 && moveDirection.z == 0)) {
-//		moveDirection = moveDirection.normalize();
-//		player.move(moveDirection, deltaTime);
-//	}
-//
-//	// 调整视角
-//	camera.processMouse(canvas);
-//
-//	// 更新主角位置（模拟贴地行走）
-//	float groundHeight = getGroundHeight(player.position); // 获取地面高度
-//	player.stayOnGround(groundHeight);
-//}

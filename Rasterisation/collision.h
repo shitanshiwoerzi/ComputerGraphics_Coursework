@@ -41,19 +41,19 @@ public:
 	Sphere() : centre(mathLib::Vec3(0, 0, 0)), radius(1.0f) {}
 	Sphere(const mathLib::Vec3& _centre, float _radius) : centre(_centre), radius(_radius) {}
 
-	// 检查点是否在球体内
+	// Is the checkpoint inside the sphere
 	bool contains(mathLib::Vec3& point) {
 		return (point - centre).getLengthSquare() <= radius * radius;
 	}
 
-	// 检查与另一个球体是否相交
+	// Check for intersection with another sphere
 	bool intersects(Sphere& other) {
 		float distanceSquared = (other.centre - centre).getLengthSquare();
 		float radiusSum = radius + other.radius;
 		return distanceSquared <= radiusSum * radiusSum;
 	}
 
-	// 检查与 AABB 是否相交
+	// Check for intersection with AABB
 	bool intersects(const AABB& aabb) {
 		float distSquared = 0.0f;
 		for (int i = 0; i < 3; ++i) {
@@ -64,7 +64,7 @@ public:
 		return distSquared <= radius * radius;
 	}
 
-	// 检查与射线是否相交，并返回最近的交点
+	// Checks for intersection with a ray and returns the nearest intersection point
 	bool intersects(Ray& ray, float& t);
 };
 
@@ -87,63 +87,40 @@ public:
 		return (o + (dir * t));
 	}
 
-	// 判断点是否在射线上（允许一定误差）
+	// Determine if the point is on the ray (allow for some error)
 	bool isPointOnRay(mathLib::Vec3& point, float epsilon = 1e-6f) {
-		mathLib::Vec3 v = point - o; // 点到射线起点的向量
-		float t = dot(v, dir);       // 计算点到射线的投影长度
-		if (t < 0) return false;    // 如果 t 为负，点在射线起点的反方向
-		return (v - dir * t).getLengthSquare() <= epsilon * epsilon; // 检查点是否在射线方向
+		mathLib::Vec3 v = point - o; // Vector from the point to the start of the ray
+		float t = dot(v, dir);       // Calculate the length of the projection from the point to the ray
+		if (t < 0) return false;    // If t is negative, the point is in the opposite direction of the start of the ray
+		return (v - dir * t).getLengthSquare() <= epsilon * epsilon; // Check if the point is in the ray direction
 	}
 
-	// 检测与平面的相交，返回交点和参数 t
+	// Detects the intersection with the plane, returns the intersection point and the parameter t
 	bool intersectsPlane(mathLib::Vec3& planePoint, mathLib::Vec3& planeNormal, float& t) {
 		float denom = dot(planeNormal, dir);
 		if (std::abs(denom) < 1e-6f) {
-			return false; // 射线与平面平行
+			return false; // The rays are parallel to the plane
 		}
 		t = dot(planePoint - o, planeNormal) / denom;
-		return t >= 0.0f; // 只有 t >= 0 时，交点在射线方向上
+		return t >= 0.0f; // The intersection is in the direction of the ray only if t >= 0.
 	}
 
-	// 检测与三角形的相交，返回交点参数 t 和重心坐标 u, v
-	bool intersectsTriangle(mathLib::Vec3& v0, mathLib::Vec3& v1, mathLib::Vec3& v2, float& t, float& u, float& v) {
-		// Möller-Trumbore 算法
-		mathLib::Vec3 edge1 = v1 - v0;
-		mathLib::Vec3 edge2 = v2 - v0;
-		mathLib::Vec3 h = cross(dir, edge2);
-		float a = dot(edge1, h);
-
-		if (std::abs(a) < 1e-6f) return false; // 射线与三角形平面平行
-
-		float f = 1.0f / a;
-		mathLib::Vec3 s = o - v0;
-		u = f * dot(s, h);
-		if (u < 0.0f || u > 1.0f) return false;
-
-		mathLib::Vec3 q = cross(s, edge1);
-		v = f * dot(dir, q);
-		if (v < 0.0f || u + v > 1.0f) return false;
-
-		t = f * dot(edge2, q);
-		return t >= 0.0f; // 交点必须在射线方向
-	}
-
-	// 检测与球体的相交，返回交点参数 t
+	// Detects the intersection with the sphere and returns the intersection parameter t
 	bool intersectsSphere(const mathLib::Vec3& sphereCenter, float sphereRadius, float& t) {
 		mathLib::Vec3 oc = o - sphereCenter;
 
-		// 二次方程系数
+		// quadratic coefficient
 		float a = dot(dir, dir);
 		float b = 2.0f * dot(oc, dir);
 		float c = dot(oc, oc) - sphereRadius * sphereRadius;
 
-		// 判别式
+		// discriminant 
 		float discriminant = b * b - 4 * a * c;
 		if (discriminant < 0) {
-			return false; // 没有交点
+			return false; // no intersection
 		}
 
-		// 最近的交点
+		// nearest point of intersection
 		float sqrtDisc = std::sqrt(discriminant);
 		float t0 = (-b - sqrtDisc) / (2.0f * a);
 		float t1 = (-b + sqrtDisc) / (2.0f * a);
@@ -152,7 +129,7 @@ public:
 		return t > 0;
 	}
 
-	// 检测与 AABB 的相交，返回参数 tmin 和 tmax
+	// Detects the intersection with AABB and returns the parameters tmin and tmax.
 	bool intersectsAABB(const AABB& box, float& tmin, float& tmax) {
 		tmin = 0.0f;
 		tmax = FLT_MAX;
@@ -173,16 +150,16 @@ public:
 };
 
 bool AABB::intersects(const Sphere& sphere) {
-	float distSquared = 0.0f;// 初始化球体中心到 AABB 的最短距离平方
-	for (int i = 0; i < 3; ++i) {// 遍历 x, y, z 三个坐标轴
-		float v = sphere.centre[i];  // 获取球体中心在当前轴的坐标
-		// 球体中心在 AABB 当前轴范围之外的情况
+	float distSquared = 0.0f;// Initialize the square of the shortest distance from the center of the sphere to the AABB.
+	for (int i = 0; i < 3; ++i) {// Iterate over the x, y, and z axes.
+		float v = sphere.centre[i];  // Get the coordinates of the center of the sphere in the current axis
+		// Sphere center outside the range of the AABB's current axis
 		if (v < min[i]) distSquared += (min[i] - v) * (min[i] - v);
 		if (v > max[i]) distSquared += (v - max[i]) * (v - max[i]);
 	}
 	std::cout << "Distance Squared: " << distSquared << "\n";
 	std::cout << "Sphere Radius Squared: " << sphere.radius * sphere.radius << "\n";
-	// 比较球体中心到 AABB 的最短距离平方与球体半径平方
+	//  Compare the square of the shortest distance from the center of the sphere to AABB to the square of the radius of the sphere.
 	return distSquared <= sphere.radius * sphere.radius;
 }
 
@@ -207,22 +184,21 @@ bool AABB::intersects(Ray& ray, float& tmin, float& tmax) {
 bool Sphere::intersects(Ray& ray, float& t) {
 	mathLib::Vec3 oc = ray.o - centre;
 
-	// 求解射线方程：t^2 * (dir·dir) + 2t * (oc·dir) + (oc·oc - r^2) = 0
 	float a = dot(ray.dir, ray.dir);
 	float b = 2.0f * dot(oc, ray.dir);
 	float c = dot(oc, oc) - radius * radius;
 	float discriminant = b * b - 4 * a * c;
 
 	if (discriminant < 0) {
-		return false; // 无解，射线未与球体相交
+		return false;
 	}
 
-	// 求两个交点
+	// Find the two points of intersection
 	float sqrtDisc = std::sqrt(discriminant);
 	float t0 = (-b - sqrtDisc) / (2.0f * a);
 	float t1 = (-b + sqrtDisc) / (2.0f * a);
 
-	// 返回最近的正交点
+	// Returns the nearest orthogonal point
 	t = (t0 > 0) ? t0 : t1;
 	return t > 0;
 }

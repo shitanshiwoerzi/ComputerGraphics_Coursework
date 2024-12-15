@@ -55,13 +55,13 @@ float4 PS(PS_INPUT input) : SV_Target
     float diff = max(dot(normal, lightDir), 0.0);
     float3 diffuse = diff * lightColor * albedo;
     
-    float3 lightDir1 = normalize(float3(0, -1.0, 0.5));
+    float3 lightDir1 = normalize(float3(0.0, -1.0, 0.5));
     float3 lightColor1 = float3(2.0, 2.0, 2.0);
     float diff1 = max(dot(normal, lightDir1), 0.0);
     float3 diffuse1 = diff1 * lightColor1 * albedo;
     
     float3 ambientColor = float3(0.3, 0.3, 0.3);
-    float ambientIntensity = 0.5;
+    float ambientIntensity = 0.7;
     float3 ambient = ambientColor * ambientIntensity;
     
     float3 finalColour = diffuse1 + diffuse + ambient;

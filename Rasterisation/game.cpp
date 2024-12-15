@@ -67,6 +67,10 @@ static void loadAssets(textureManager& textures, DxCore* core) {
 	textures.load(core, "Resources/Textures/Bricks097_1K-PNG_NormalDX.png");
 }
 
+void debugOutput(const std::string& message) {
+	OutputDebugStringA(message.c_str());
+}
+
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nCmdShow) {
 	Window canvas;
 	ShaderManager shaders;
@@ -129,6 +133,8 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 	Shader* waterShader = shaders.getShader(waterShaderName);
 	GamesEngineeringBase::Timer tim;
 	float t = 0;
+	float elapsedTime = 0.0f;
+	int frameCount = 0;
 	mathLib::Matrix planeWorld;
 	mathLib::Matrix vp;
 	mathLib::Vec3 to(0, 1, 0);
@@ -145,13 +151,26 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nC
 		dx->clear();
 		// defer shading	
 		dx->geometryPass();
-		t += tim.dt();
+		float dt = tim.dt();
+		t += dt;
+
+		elapsedTime += dt;
+		frameCount++;
+		// update FPS each second
+		if (elapsedTime >= 1.0f) {
+			float fps = frameCount / elapsedTime;
+			frameCount = 0;
+			elapsedTime = 0.0f;
+
+			std::string message = "FPS: " + std::to_string(fps) + "\n";
+			debugOutput(message);
+		}
 
 		// draw sky dome
 		sky.update(t);
 		sky.draw(dx, skyShader, textures, sam, camera.position, vp);
 
-		handleInput(player, camera, canvas, tim.dt() * 200, cube.boundingBox);
+		handleInput(player, camera, canvas, dt, cube.boundingBox);
 		mathLib::Matrix cv = camera.getViewMatrix();
 		vp = cv * p;
 

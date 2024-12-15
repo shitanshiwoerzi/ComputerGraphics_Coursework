@@ -154,11 +154,9 @@ private:
 		std::ifstream infile;
 		infile.open(filename);
 
-		// 使用 stringstream 读取文件内容
 		std::stringstream buffer;
 		buffer << infile.rdbuf();
 
-		// 返回文件内容作为字符串
 		return buffer.str();
 	}
 };

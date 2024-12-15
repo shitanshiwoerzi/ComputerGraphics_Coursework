@@ -4,15 +4,15 @@
 class Player {
 public:
 	mathLib::Vec3 position;
-	mathLib::Vec3 velocity;    // 主角速度
+	mathLib::Vec3 velocity;    // player's velocity(with direction)
 	float speed;               // movement speed
-	mathLib::Quaternion rotation; // 主角朝向（旋转）
+	mathLib::Quaternion rotation; // player's orientation
 	animatedModel* model;
 	AABB boundingBox;
 	std::string currentAnimation;
-	bool isAttacking = false; // 是否正在播放攻击动画
-	float attackAnimationTime = 0.0f; // 当前攻击动画播放时间
-	float attackDuration = 1.0f; // 攻击动画的总持续时间
+	bool isAttacking = false; // Whether or not the attack animation is playing
+	float attackAnimationTime = 0.0f; // Current attack animation play time
+	float attackDuration = 1.0f; // Total duration of the attack animation
 
 
 	Player(const mathLib::Vec3& startPos, float moveSpeed, animatedModel* _model)
@@ -21,25 +21,25 @@ public:
 	}
 
 	void update(mathLib::Vec3 direction, mathLib::Vec3 forward, AABB& obstacle, float deltaTime) {
-		// 更新主角的动画状态
+		// Update the animation status
 		if (direction.getLengthSquare() > 0.0f) {
-			updateRotation(direction); // 更新朝向
-			updateAnimation("Run", deltaTime); // 切换到运行动画
+			updateRotation(direction);
+			updateAnimation("Run", deltaTime); // Switch to running animation
 			move(direction, deltaTime, obstacle);
 		}
 		else {
-			updateAnimation("Idle", deltaTime);    // 待机动画
+			updateAnimation("Idle", deltaTime);    // switch to idle
 		}
 	}
 
-	// 更新主角位置
+	// update player position
 	void move(mathLib::Vec3& direction, float deltaTime, AABB& obstacle) {
 		velocity = direction * speed;
 
 		if (direction.getLengthSquare() > 0.0f) {
 			mathLib::Vec3 newPosition = position + velocity * deltaTime;
 
-			// 更新碰撞盒
+			// update boundingBox
 			AABB newBoundingBox = boundingBox;
 			newBoundingBox.min += (newPosition - position);
 			newBoundingBox.max += (newPosition - position);
@@ -55,36 +55,35 @@ public:
 			//	updateBoundingBox();
 			//}
 
-					// 检测碰撞
+					// check collision
 			if (newBoundingBox.intersects(obstacle)) {
-				// 计算碰撞法线
+				// compute normal
 				mathLib::Vec3 collisionNormal = calculateCollisionNormal(obstacle);
 
-				// 调整速度方向（滑动方向）
+				// Adjustment of speed direction (sliding direction)
 				velocity = velocity - collisionNormal * velocity.dot(collisionNormal);
 
-				// 更新位置
+				// Update Location
 				newPosition = position + velocity * deltaTime;
 
-				// 再次检查新位置的碰撞盒
+				// get new boundingBox
 				newBoundingBox.min += (newPosition - position);
 				newBoundingBox.max += (newPosition - position);
 
-				// 确保新的位置不再与障碍物碰撞
+				// check again
 				if (!newBoundingBox.intersects(obstacle)) {
 					position = newPosition;
 					updateBoundingBox();
 				}
 			}
 			else {
-				// 如果没有碰撞，正常更新位置
+				// if no collision, move
 				position = newPosition;
 				updateBoundingBox();
 			}
 		}
 	}
 
-	// 更新朝向
 	void updateRotation(mathLib::Vec3& moveDirection) {
 		if (moveDirection.getLengthSquare() > 0.0f) {
 			float angle = atan2(-moveDirection.x, -moveDirection.z);
@@ -93,7 +92,7 @@ public:
 		}
 	}
 
-	// 更新主角模型的动画状态
+	// Update the animation state of the player
 	void updateAnimation(const std::string& animationName, float deltaTime) {
 		//if (model) {
 		//	model->instance.update(animationName, deltaTime);
@@ -108,11 +107,11 @@ public:
 	}
 
 	void updateBoundingBox() {
-		// 获取模型的原始碰撞盒
+		// get original boundingBox
 		mathLib::Vec3 localMin = model->bounds.min;
 		mathLib::Vec3 localMax = model->bounds.max;
 
-		// 原始碰撞盒的八个顶点
+		// 8 vertices
 		mathLib::Vec3 corners[8] = {
 			mathLib::Vec3(localMin.x, localMin.y, localMin.z),
 			mathLib::Vec3(localMin.x, localMin.y, localMax.z),
@@ -124,7 +123,7 @@ public:
 			mathLib::Vec3(localMax.x, localMax.y, localMax.z),
 		};
 
-		// 初始化新的 AABB
+		// init AABB
 		mathLib::Vec3 transformedMin(FLT_MAX, FLT_MAX, FLT_MAX);
 		mathLib::Vec3 transformedMax(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
@@ -133,7 +132,7 @@ public:
 		mathLib::Matrix rotationMatrix = rotation.toMatrix();
 		mathLib::Matrix worldMatrix = scaling * rotationMatrix * translation;
 
-		// 变换每个顶点，并更新 AABB
+		// transform each vertex
 		for (auto& corner : corners) {
 			mathLib::Vec3 transformedCorner = worldMatrix.mulPoint(corner);
 
@@ -146,15 +145,15 @@ public:
 			transformedMax.z = max(transformedMax.z, transformedCorner.z);
 		}
 
-		// 更新碰撞盒
+		// update boundingBox
 		boundingBox.min = transformedMin;
 		boundingBox.max = transformedMax;
 	}
 
-	// 渲染主角模型
+	// render player
 	void draw(DxCore* core, Shader* shader, textureManager textures, sampler sam, mathLib::Matrix& vp) {
 		if (model) {
-			// 计算世界矩阵，包含缩放,平移和旋转
+			// compute matrix
 			mathLib::Matrix scaling = mathLib::Matrix::scaling(mathLib::Vec3(0.3f, 0.3f, 0.3f));
 			mathLib::Matrix translation = mathLib::Matrix::translation(position);
 			mathLib::Matrix rotationMatrix = rotation.toMatrix();
@@ -164,14 +163,13 @@ public:
 		}
 	}
 
-	// 与地形或物体碰撞检测（简化为地面高度）
 	void stayOnGround(float groundHeight) {
 		position.y = groundHeight;
 	}
 
-	// 计算碰撞法线（针对 AABB）
+	// compute normal(AABB)
 	mathLib::Vec3 calculateCollisionNormal(AABB& obstacle) {
-		// 假设玩家的 AABB 边界与障碍物重叠，计算最近的接触面法线
+		// Assuming that the player's AABB boundary overlaps an obstacle, calculate the nearest contact surface normal
 		mathLib::Vec3 normal;
 
 		float dx1 = obstacle.max.x - boundingBox.min.x;
@@ -182,12 +180,12 @@ public:
 		float dz2 = boundingBox.max.z - obstacle.min.z;
 
 		float minDist = min(min(dx1, dx2), min(dy1, dy2), min(dz1, dz2));
-		if (minDist == dx1) normal = mathLib::Vec3(-1, 0, 0); // 碰撞在左侧
-		else if (minDist == dx2) normal = mathLib::Vec3(1, 0, 0); // 碰撞在右侧
-		else if (minDist == dy1) normal = mathLib::Vec3(0, -1, 0); // 碰撞在底部
-		else if (minDist == dy2) normal = mathLib::Vec3(0, 1, 0); // 碰撞在顶部
-		else if (minDist == dz1) normal = mathLib::Vec3(0, 0, -1); // 碰撞在前方
-		else if (minDist == dz2) normal = mathLib::Vec3(0, 0, 1); // 碰撞在后方
+		if (minDist == dx1) normal = mathLib::Vec3(-1, 0, 0); // left
+		else if (minDist == dx2) normal = mathLib::Vec3(1, 0, 0); // right
+		else if (minDist == dy1) normal = mathLib::Vec3(0, -1, 0); // bottom
+		else if (minDist == dy2) normal = mathLib::Vec3(0, 1, 0); // up
+		else if (minDist == dz1) normal = mathLib::Vec3(0, 0, -1); // front
+		else if (minDist == dz2) normal = mathLib::Vec3(0, 0, 1); // back
 		return normal;
 	}
 };

@@ -115,11 +115,22 @@ void Window::getMouseMovement(float& deltaX, float& deltaY) {
 	deltaX = static_cast<float>(lastX - currentCursorPos.x);	
 	deltaY = static_cast<float>(lastY - currentCursorPos.y);
 
-	// 重置鼠标到窗口中心
-	int centerX = (windowRect.left + windowRect.right) / 2;
-	int centerY = (windowRect.top + windowRect.bottom) / 2;
-	SetCursorPos(centerX, centerY);
 
-	lastX = centerX;
-	lastY = centerY;
+	HWND activeWindow = GetForegroundWindow();
+
+	if (activeWindow == this->hwnd) {
+		// 重置鼠标到窗口中心
+		int centerX = (windowRect.left + windowRect.right) / 2;
+		int centerY = (windowRect.top + windowRect.bottom) / 2;
+		SetCursorPos(centerX, centerY);
+
+		lastX = centerX;
+		lastY = centerY;
+	}
+	else {
+		// 如果不是活动窗口，不锁定鼠标
+		lastX = currentCursorPos.x;
+		lastY = currentCursorPos.y;
+	}
+
 }

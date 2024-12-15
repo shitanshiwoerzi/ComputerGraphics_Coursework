@@ -17,8 +17,6 @@ public:
 	ID3D11RenderTargetView* gBufferRTV[3];
 	ID3D11ShaderResourceView* gBufferSRV[3];
 
-	ID3D11DepthStencilState* noDepthWriteState;
-	ID3D11DepthStencilState* defaultDepthState;
 	//ID3D11BlendState* blendState;
 
 	void Init(unsigned int width, unsigned int height, HWND hwnd, bool window_fullscreen = false) {
@@ -90,25 +88,25 @@ public:
 	}
 
 	void geometryPass() {
-		// 设置G缓冲区为渲染目标
+		// set G Buffer as default
 		ID3D11RenderTargetView* rtvs[3] = { gBufferRTV[0], gBufferRTV[1], gBufferRTV[2] };
 		devicecontext->OMSetRenderTargets(3, rtvs, depthStencilView);
 
-		// 清除G缓冲区
+		// clear G buffer
 		float clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		for (int i = 0; i < 3; ++i) {
 			devicecontext->ClearRenderTargetView(gBufferRTV[i], clearColor);
 		}
-		// 再次清除深度缓冲区
+		// clear the depth buffer again
 		devicecontext->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
 	void lightingPass() {
-		// 解绑 G-buffer 的渲染目标
+		// unbundle
 		ID3D11RenderTargetView* nullRTV[3] = { nullptr, nullptr, nullptr };
 		devicecontext->OMSetRenderTargets(3, nullRTV, nullptr);
 
-		// 设置后缓冲区为渲染目标
+		// set back buffer to default
 		devicecontext->OMSetRenderTargets(1, &backbufferRenderTargetView, nullptr);
 
 		devicecontext->PSSetShaderResources(0, 3, gBufferSRV);
